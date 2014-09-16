@@ -23,12 +23,12 @@
   </style>
 </head>
 <body>
-  <div id="fullscreenContainer">
+  <section id="fullscreenContainer">
     <p>This is an example of the full-screen API in action. Press the button to toggle full-screen mode.</p>
     <p>
       <button onclick="toggleFullScreen(document.getElementById('myvideo'))">toggle Video Element Full Screen</button>
       <button onclick="toggleFullScreen(document.getElementById('fullscreenContainer'))">toggle Page Container Full Screen</button></p>
-      <video controls src="http://videos-cdn.mozilla.net/serv/webmademovies/Moz_Doc_0329_GetInvolved_ST.webm" id="myvideo"></div>
+      <video controls src="http://videos-cdn.mozilla.net/serv/webmademovies/Moz_Doc_0329_GetInvolved_ST.webm" id="myvideo"></section>
 </body>
 
 <script>
@@ -42,24 +42,13 @@
     console.log('screenlayoutchange -- clientWidth: ' + container.clientWidth + ', clientHeight: ' + container.clientHeight);
   });
 
-  var fullscreenContainer = document.getElementById('fullscreenContainer'); 
-  fullscreenContainer.addEventListener('mozfullscreenchange', function() {
-    console.log('success screen change');
-  });
-
-  fullscreenContainer.addEventListener('mozfullscreenerror', function(e) {
-    console.log('failure screen change, e: ' + e);
-  });
-
   function toggleFullScreen(element) {
     if (!document.mozFullScreen) {
       if (element.mozRequestFullScreen) {
-        console.log('mozRequestFullScreen');
         element.mozRequestFullScreen();
       }
     } else {
       if (document.mozCancelFullScreen) {
-        console.log('mozCancelFullScreen');
         document.mozCancelFullScreen();
       }
     }
