@@ -49,19 +49,7 @@
   }
 
   function requestFullScreen() {
-    //alert('requestFullScreen');
     var container = document.getElementById('fullscreenContainer');
-   
-    container.addEventListener('mozfullscreenchange', function fullScreenSuccess() {
-      alert('got fullscreen');
-    });
-
-    container.addEventListener('mozfullscreenerror', function fullScreenError() {
-      alert('error getting fullscreen');
-    });
-
-    var player = document.getElementById('myvideo');
-    alert('mozRequestFullScreen');
     container.mozRequestFullScreen();
   }
     
