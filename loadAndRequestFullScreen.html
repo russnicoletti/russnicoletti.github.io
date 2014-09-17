@@ -29,8 +29,9 @@
     <p>
       <button onclick="toggleFullScreen(document.getElementById('myvideo'))">toggle Video Element Full Screen</button>
       <button onclick="toggleFullScreen(document.getElementById('fullscreenContainer'))">toggle Page Container Full Screen</button>
+      <button onclick="loadVideoGoFullScreen()">Load video, then enter Full Screen</button>
     </p>
-      <video controls src="http://videos-cdn.mozilla.net/serv/webmademovies/Moz_Doc_0329_GetInvolved_ST.webm" id="myvideo">
+      <video controls src="about:blank" id="myvideo">
    </div>
    </section>
 </body>
@@ -46,5 +47,18 @@
       document.mozCancelFullScreen();
     }
   }
+
+  function requestFullScreen() {
+    var container = document.getElementById('fullscreenContainer');
+    container.mozRequestFullScreen();
+  }
+    
+  function loadVideoGoFullScreen() {
+    var player = document.getElementById('myvideo');
+    player.preload = 'auto';
+    player.onloadeddata = requestFullScreen;
+    player.src = "http://videos-cdn.mozilla.net/serv/webmademovies/Moz_Doc_0329_GetInvolved_ST.webm";
+  }
+
 </script>
 </html>
