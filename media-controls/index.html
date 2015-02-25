@@ -25,18 +25,5 @@
     <gaia-media-controls id="media-controls" media-player-id="media-player"></gaia-media-controls>
   </div>
 
-  <script> 
-    var controls = document.getElementById('media-controls');
-    var player = document.getElementById('media-player');
-
-    controls.addEventListener('play-button-click', function() {
-      if (player.paused) {
-        player.play();
-      }
-      else {
-        player.pause();
-      }
-    });
-  </script> 
 </body>
 </html>

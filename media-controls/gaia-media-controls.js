@@ -395,11 +395,9 @@ function MediaControlsImpl(mediaControlsElement, shadowRoot) {
   this.sliderRect = null;
   this.endedTimer = null;
   this.playedUntilEnd = false;
-  this.mouseMoveStart = false;
   this.isLongPressing = false;
   this.intervalId = null;
   this.pausedAtEndWhilePlaying = false;
-  //this.mockTouch = null;
   this.mediaPlayer = document.getElementById(mediaControlsElement.mediaPlayerId);
 
   this.els = {
@@ -540,8 +538,14 @@ MediaControlsImpl.prototype.handleLongPressStop = function() {
 };
 
 MediaControlsImpl.prototype.handlePlayButton = function() {
-  this.mediaControlsElement.dispatchEvent(
-    new CustomEvent('play-button-click'));
+  // Let the 'play' and 'pause' handlers take care of changing
+  // the icon and setting the l10n-id (for the screen reader).
+  if (this.mediaPlayer.paused) {
+    this.mediaPlayer.play();
+  }
+  else {
+    this.mediaPlayer.pause();
+  }
 };
 
 MediaControlsImpl.prototype.handleStartLongPressing = function(event) {
@@ -701,20 +705,14 @@ MediaControlsImpl.prototype.handleMouseDown = function(event) {
       }
  
       var touchItem = { 'identifier' : mockTouchId };
-      console.log('mockTouchId: ' + mockTouchId);
-      console.log('mockChangedTouches.item, identifier: ' + touchItem.identifier);
       return touchItem;
     },
 
     identifiedTouch: function(touchIdentifier) {
-      console.log('mockChangedTouches.identifiedTouch');
-      console.log('touchIdentifier: ' + touchIdentifier);  
-      console.log('mockTouchId: ' + mockTouchId); 
       if (touchIdentifier !== mockTouchId) {
         return;
       }
 
-      console.log('mockTouch: ' + mockTouch); 
       return mockTouch;
     },
 
@@ -730,7 +728,6 @@ MediaControlsImpl.prototype.handleMouseDown = function(event) {
 };
 
 MediaControlsImpl.prototype.handleMouseMove = function(event) {
-  console.log('handleMouseMove');
   if (!this.mockChangedTouches) {
     return;
   }
@@ -751,7 +748,6 @@ MediaControlsImpl.prototype.handleMouseUp = function(event) {
 };
 
 MediaControlsImpl.prototype.handleSliderMoveStart = function(event) {
-  console.log('handleSliderMoveStart, this.touchStartID: ' + this.touchStartID);
   // If we already have a touch start event, we don't need others.
   if (null != this.touchStartID) {
     return false;
@@ -760,7 +756,6 @@ MediaControlsImpl.prototype.handleSliderMoveStart = function(event) {
   // Getting the touch start ID enables us to ensure we are tracking the
   // same touch throughout the slider movement.
   this.touchStartID = event.changedTouches.item(0).identifier;
-  console.log('handleSliderMoveStart, this.touchStartID: ' + this.touchStartID);
 
   // We can't do anything if we don't know our duration
   if (this.mediaPlayer.duration === Infinity) {
@@ -782,13 +777,11 @@ MediaControlsImpl.prototype.handleSliderMoveStart = function(event) {
   // calculate the slider wrapper size for slider dragging.
   this.sliderRect = this.els.sliderWrapper.getBoundingClientRect();
 
-  console.log('sliderRect: ' + this.sliderRect);
   this.handleSliderMove(event);
 };
 
 MediaControlsImpl.prototype.handleSliderMove = function(event) {
   var touch = event.changedTouches.identifiedTouch(this.touchStartID);
-  console.log('handleSliderMove, touch: ' + touch);
 
   // We don't care the event not related to touchStartID
   if (!touch) {
@@ -803,9 +796,7 @@ MediaControlsImpl.prototype.handleSliderMove = function(event) {
   }
 
   var touchPos = getTouchPos.call(this);
-  console.log('touchPos: ' + touchPos);
   var pos = touchPos / this.sliderRect.width;
-  console.log('pos: ' + pos);
   pos = Math.max(pos, 0);
   pos = Math.min(pos, 1);
 
@@ -982,7 +973,6 @@ var MediaControls = Component.register('gaia-media-controls', {
   }
 
   /* Support for web-based demo */
-/*
   @media screen and (min-width: 600px) and (max-width: 2000px) {
     footer {
       left: 25%;
@@ -993,7 +983,7 @@ var MediaControls = Component.register('gaia-media-controls', {
       bottom: calc(25% + 4.4rem);
     }
   }
-*/
+
   #video-bar:last-child {
     bottom: 0;
   }
