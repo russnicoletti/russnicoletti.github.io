@@ -417,26 +417,25 @@ function MediaControlsImpl(mediaControlsElement, shadowRoot) {
 }
 
 MediaControlsImpl.prototype.addEventListeners = function(shadowRoot) {
-  shadowRoot.addEventListener('click', this);
   shadowRoot.addEventListener('contextmenu', this);
-  shadowRoot.addEventListener('touchstart', this);
   shadowRoot.addEventListener('touchend', this);
+  shadowRoot.addEventListener('click', this);
+  shadowRoot.addEventListener('touchstart', this);
   shadowRoot.addEventListener('touchmove', this);
+  shadowRoot.addEventListener('touchend', this);
   shadowRoot.addEventListener('mousedown', this);
-  shadowRoot.addEventListener('mouseup', this);
   shadowRoot.addEventListener('mousemove', this);
-  
-  this.mediaPlayer.addEventListener('loadedmetadata', this.handleMediaEvent.bind(this));
-  this.mediaPlayer.addEventListener('play', this.handleMediaEvent.bind(this));
-  this.mediaPlayer.addEventListener('pause', this.handleMediaEvent.bind(this));
-  this.mediaPlayer.addEventListener('timeupdate', this.handleMediaEvent.bind(this));
-  this.mediaPlayer.addEventListener('seeked', this.handleMediaEvent.bind(this));
-  this.mediaPlayer.addEventListener('ended', this.handleMediaEvent.bind(this));
+  shadowRoot.addEventListener('mouseup', this);
+
+  this.mediaPlayer.addEventListener('loadedmetadata', this);
+  this.mediaPlayer.addEventListener('play', this);
+  this.mediaPlayer.addEventListener('pause', this);
+  this.mediaPlayer.addEventListener('timeupdate', this)
+  this.mediaPlayer.addEventListener('seeked', this);
+  this.mediaPlayer.addEventListener('ended', this);
 };
 
 MediaControlsImpl.prototype.handleEvent = function(e) {
-
-  var videoToolbar = this.els.seekForward.parentElement;
 
   switch(e.target) {
     case this.els.play:
@@ -444,76 +443,82 @@ MediaControlsImpl.prototype.handleEvent = function(e) {
         this.handlePlayButton();
       }
     break;
+
     case this.els.seekForward:
       if (e.type === 'click') {
         this.handleSeekForward();
       }
-    break;
-    case this.els.seekBackward:
-      if (e.type === 'click') {
-        this.handleSeekBackward();
-      }
-    break;
-    case videoToolbar:
-      if (e.type === 'contextmenu') {
+      else if (e.type === 'contextmenu') {
         this.handleStartLongPressing(e);
       }
       else if (e.type === 'touchend') {
         this.handleLongPressStop();
       }
     break;
+
+    case this.els.seekBackward:
+      if (e.type === 'click') {
+        this.handleSeekBackward();
+      }
+      else if (e.type === 'contextmenu') {
+        this.handleStartLongPressing(e);
+      }
+      else if (e.type === 'touchend') {
+        this.handleLongPressStop();
+      }
+    break;
+
     case this.els.sliderWrapper:
+
+      function getClientX(event) {
+        if (event instanceof MouseEvent) {
+          return event.clientX;
+        }
+        else if (event instanceof TouchEvent) {
+          return event.changedTouches[0].clientX;
+        }
+      }
+
       switch(e.type) {
         case 'touchstart':
-          this.handleSliderMoveStart(e);
-          break;
         case 'mousedown':
-          this.handleMouseDown(e);
+          this.handleSliderMoveStart(getClientX(e));
           break;
         case 'touchmove':
-          this.handleSliderMove(e);
-          break;
         case 'mousemove':
-          this.handleMouseMove(e);
+          this.handleSliderMove(getClientX(e));
           break;
         case 'touchend':
-          this.handleSliderMoveEnd(e);
-          break;
         case 'mouseup':
-          this.handleMouseUp(e);
+          this.handleSliderMoveEnd();
           break;
       }
       break;
+
+      case this.mediaPlayer:
+        switch(e.type) {
+          case 'loadedmetadata':
+            this.handleLoadedMetadata();
+            break;
+          case 'play':
+            this.handleMediaPlaying();
+            break;
+          case 'pause':
+            this.handleMediaPaused();
+            break;
+          case 'timeupdate':
+            this.handleMediaTimeUpdated();
+            break;
+          case 'seeked':
+            this.handleMediaSeeked();
+            break;
+          case 'ended':
+            this.handlePlayerEnded();
+            break;
+        }
+      break;
   }
 };
-
-MediaControlsImpl.prototype.handleMediaEvent = function(e) {
-
-  switch(e.type) {
-    case 'loadedmetadata':
-      this.handleLoadedMetadata();
-      break;
-    case 'play':
-      this.handleMediaPlaying();
-      break;
-    case 'pause':
-      this.handleMediaPaused();
-      break;
-    case 'timeupdate':
-      this.handleMediaTimeUpdated();
-      break;
-    case 'seeked':
-      this.handleMediaSeeked();
-      break;
-    case 'ended':
-      this.handlePlayerEnded();
-      break;
-  }
-};
-
-/*
-** Functions handling events.
-*/
 
 MediaControlsImpl.prototype.handleSeekForward = function() {
   this.startFastSeeking(1);
@@ -521,6 +526,27 @@ MediaControlsImpl.prototype.handleSeekForward = function() {
 
 MediaControlsImpl.prototype.handleSeekBackward = function() {
   this.startFastSeeking(-1);
+};
+
+MediaControlsImpl.prototype.handlePlayButton = function() {
+  // Let the 'play' and 'pause' handlers take care of changing
+  // the icon and setting the l10n-id (for the screen reader).
+  if (this.mediaPlayer.paused) {
+    this.mediaPlayer.play();
+  }
+  else {
+    this.mediaPlayer.pause();
+  }
+};
+
+MediaControlsImpl.prototype.handleStartLongPressing = function(event) {
+  if (event.target === this.els.seekForward) {
+    this.handleLongPressForward();
+  } else if (event.target === this.els.seekBackward) {
+    this.handleLongPressBackward();
+  } else {
+    return;
+  }
 };
 
 MediaControlsImpl.prototype.handleLongPressForward = function() {
@@ -537,37 +563,19 @@ MediaControlsImpl.prototype.handleLongPressStop = function() {
   this.stopFastSeeking();
 };
 
-MediaControlsImpl.prototype.handlePlayButton = function() {
-  // Let the 'play' and 'pause' handlers take care of changing
-  // the icon and setting the l10n-id (for the screen reader).
-  if (this.mediaPlayer.paused) {
-    this.mediaPlayer.play();
-  }
-  else {
-    this.mediaPlayer.pause();
-  }
-};
-
-MediaControlsImpl.prototype.handleStartLongPressing = function(event) {
-
-  if (event.target.id === this.els.seekForward.id) {
-    this.handleLongPressForward();
-  } else if (event.target.id === this.els.seekBackward.id) {
-    this.handleLongPressBackward();
-  } else {
-    return;
-  }
-};
-
 MediaControlsImpl.prototype.handleMediaPlaying = function() {
 
   this.els.play.classList.remove('paused');
+
+  // Update l10n-id for the benefit of the screen reader
   this.els.play.setAttribute('data-l10n-id', 'playbackPlay');
 };
 
 MediaControlsImpl.prototype.handleMediaPaused = function() {
 
   this.els.play.classList.add('paused');
+
+  // Update l10n-id for the benefit of the screen reader
   this.els.play.setAttribute('data-l10n-id', 'playbackPause');
 
   // If the paused event comes when the media is at the end,
@@ -594,13 +602,6 @@ MediaControlsImpl.prototype.handlePlayerEnded = function() {
   this.playerEnded();
 };
 
-/*
-** End event handling functions.
-*/
-
-/*
-** "Worker" functions.
-*/
 // Update the progress bar and play head as the video plays
 MediaControlsImpl.prototype.handleMediaTimeUpdated = function() {
   if (!this.mediaControlsElement.hidden) {
@@ -683,86 +684,18 @@ MediaControlsImpl.prototype.playerEnded = function() {
   }
 };
 
-MediaControlsImpl.prototype.handleMouseDown = function(event) {
-  console.log('handleMouseDown, this.mockChangedTouches: ' + this.mockChangedTouches);
-
-  // This is a mouse down event. If we've already had a mouse down
-  // event, we don't need others.
-  if (this.mockChangedTouches) {
-    return;
-  }
-
-  // Create the API necessary to mock a touch event.
-  // The 'identifiedTouch' function needs to return a 'Touch'
-  // object, which corresponds to the event object received
-  // from the mouse event.
-	this.mockChangedTouches = { 
-    mockTouch: null,
-    item: function(index) {
- 
-      if (index !== 0) {
-        return;
-      }
- 
-      var touchItem = { 'identifier' : mockTouchId };
-      return touchItem;
-    },
-
-    identifiedTouch: function(touchIdentifier) {
-      if (touchIdentifier !== mockTouchId) {
-        return;
-      }
-
-      return mockTouch;
-    },
-
-    setMockTouch: function(mt) {
-      mockTouch = mt;
-    }
-  }; 
-
-  var mockTouchId = Date.now();
-  this.mockChangedTouches.setMockTouch(event);
-  event.changedTouches = this.mockChangedTouches;
-  this.handleSliderMoveStart(event);
-};
-
-MediaControlsImpl.prototype.handleMouseMove = function(event) {
-  if (!this.mockChangedTouches) {
-    return;
-  }
-
-  this.mockChangedTouches.setMockTouch(event);
-  event.changedTouches = this.mockChangedTouches;
-  this.handleSliderMove(event);
-};
-
-MediaControlsImpl.prototype.handleMouseUp = function(event) {
-  if (!this.mockChangedTouches) {
-    return;
-  }
-
-  event.changedTouches = this.mockChangedTouches;
-  this.handleSliderMoveEnd(event);
-  this.mockChangedTouches = null;
-};
-
-MediaControlsImpl.prototype.handleSliderMoveStart = function(event) {
+MediaControlsImpl.prototype.handleSliderMoveStart = function(clientX) {
   // If we already have a touch start event, we don't need others.
-  if (null != this.touchStartID) {
+  if (this.dragging) {
     return false;
   }
 
-  // Getting the touch start ID enables us to ensure we are tracking the
-  // same touch throughout the slider movement.
-  this.touchStartID = event.changedTouches.item(0).identifier;
+  this.dragging = true;
 
   // We can't do anything if we don't know our duration
   if (this.mediaPlayer.duration === Infinity) {
     return false;
   }
-
-  this.dragging = true;
 
   // Save the state of whether the media element is paused or not.
   // If it is not paused, pause it.
@@ -777,25 +710,25 @@ MediaControlsImpl.prototype.handleSliderMoveStart = function(event) {
   // calculate the slider wrapper size for slider dragging.
   this.sliderRect = this.els.sliderWrapper.getBoundingClientRect();
 
-  this.handleSliderMove(event);
+  this.handleSliderMove(clientX);
 };
 
-MediaControlsImpl.prototype.handleSliderMove = function(event) {
-  var touch = event.changedTouches.identifiedTouch(this.touchStartID);
+MediaControlsImpl.prototype.handleSliderMove = function(clientX) {
 
-  // We don't care the event not related to touchStartID
-  if (!touch) {
-    return;
+  // If the user is not dragging the slider, noop
+  if (!this.dragging) {
+    return false;
   }
 
+  var self = this;
   function getTouchPos() {
     return (!navigator.mozL10n ||
              navigator.mozL10n.language.direction === 'ltr') ?
-       (touch.clientX - this.sliderRect.left) :
-       (this.sliderRect.right - touch.clientX);
+       (clientX - self.sliderRect.left) :
+       (self.sliderRect.right - clientX);
   }
 
-  var touchPos = getTouchPos.call(this);
+  var touchPos = getTouchPos();
   var pos = touchPos / this.sliderRect.width;
   pos = Math.max(pos, 0);
   pos = Math.min(pos, 1);
@@ -813,14 +746,13 @@ MediaControlsImpl.prototype.handleSliderMove = function(event) {
 
 MediaControlsImpl.prototype.handleSliderMoveEnd = function(event) {
 
-    // We don't care the event not related to touchStartID
-  if (!event.changedTouches.identifiedTouch(this.touchStartID)) {
+  // If the user is not dragging the slider, noop
+  if (!this.dragging) {
     return false;
   }
 
-  this.touchStartID = null;
-
   this.dragging = false;
+  this.sliderRect = null;
 
   this.els.playHead.classList.remove('active');
 
@@ -862,10 +794,17 @@ MediaControlsImpl.prototype.startFastSeeking = function(direction) {
   // direction can be 1 or -1, 1 means forward and -1 means rewind.
   var offset = direction * 10;
 
-  if (this.isLongPressing) {
-    this.intervalId = window.setInterval(function() {
+  var seekOnInterval = function () {
       this.seekVideo(this.mediaPlayer.currentTime + offset);
-    }, 1000);
+  };
+
+  if (this.isLongPressing) {
+    // If we're already handling a long-press, don't process other
+    // seeking events
+    if (this.intervalId) {
+      return;
+    }
+    this.intervalId = window.setInterval(seekOnInterval.bind(this), 1000);
   } else {
     this.seekVideo(this.mediaPlayer.currentTime + offset);
   }
@@ -950,34 +889,30 @@ var MediaControls = Component.register('gaia-media-controls', {
   	-webkit-font-smoothing: antialiased;
   }
 
-  footer {
-    background: rgba(0, 0, 0, 0.75);
-    height: 4rem;
+  #media-controls-container {
     position: absolute;
-    bottom: 0;
+    background-color: rgba(0,0,0, 0.85);
     left: 0;
     right: 0;
-    z-index: 1;
+    bottom: 0;
   }
 
   /* video bar -- duration, time slider, elapsed time */
   #video-bar {
-    position: absolute;
-    bottom: 4.4rem;
+    position: relative;
     height: 4rem;
     font-size: 0;
     border-bottom: 0.1rem solid rgba(255,255,255, 0.1);
-    background-color: rgba(0,0,0, 0.85);
     white-space: nowrap;
     z-index: 10;
   }
 
   /* Support for web-based demo */
   @media screen and (min-width: 600px) and (max-width: 2000px) {
-    footer {
+    #media-controls-container {
       left: 25%;
       right: 25%;
-      bottom: 25%;
+      bottom: 10%;
     }
     #video-bar {
       bottom: calc(25% + 4.4rem);
@@ -988,26 +923,8 @@ var MediaControls = Component.register('gaia-media-controls', {
     bottom: 0;
   }
 
-::content #video-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-::content #media-player {
-  /* size and position are set in JS depending on*/
-  /* video size and screen orientation */
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
-  z-index: 11;
-}
-
   #elapsed-text,
-  #timeSlider,
+  #time-slider,
   #slider-wrapper,
   #duration-text {
     display: inline-block;
@@ -1036,7 +953,7 @@ var MediaControls = Component.register('gaia-media-controls', {
   }
 
   /* time slider */
-  #timeSlider {
+  #time-slider {
     position: relative;
     width: 100%;
     z-index: 10;
@@ -1084,13 +1001,13 @@ var MediaControls = Component.register('gaia-media-controls', {
     width: 2.3rem;
     height: 2.3rem;
 
-    /* For LTR langauges, position the playhead 1.15 rems to the left 
+    /* For LTR langauges, position the playhead 1.15 rems to the left
      * so that the center of the playhead aligns with the beginning of
      * the time slider.
      */
     margin-left: -1.15rem;
 
-    /* For RTL langauges, position the playhead 1.15 rems to the right 
+    /* For RTL langauges, position the playhead 1.15 rems to the right
      * so that the center of the playhead aligns with the end of
      * the time slider.
      */
@@ -1126,9 +1043,9 @@ var MediaControls = Component.register('gaia-media-controls', {
 
   /* video control bar -- rewind, pause/play, forward */
   #video-control-bar {
-    height: 4.5rem;
-  }
-  #video-control-bar {
+    opacity: 0.95;
+    position: relative;
+    z-index: 10;
     height: 4.5rem;
   }
 
@@ -1194,26 +1111,27 @@ var MediaControls = Component.register('gaia-media-controls', {
 
   </style>
 
-  <content select="#video-container"></content>
-  <footer id="video-bar">
-    <div id="timeSlider">
-      <span id="elapsed-text"></span>
-      <div id="slider-wrapper">
-        <div id="elapsed-time" class="progress"></div>
-        <div id="buffered-time" class="progress"></div>
-        <div id="time-background" class="progress"></div>
-        <button id="playHead"></button>
+  <div id="media-controls-container">
+    <div id="video-bar">
+      <div id="time-slider">
+        <span id="elapsed-text"></span>
+        <div id="slider-wrapper">
+          <div id="elapsed-time" class="progress"></div>
+          <div id="buffered-time" class="progress"></div>
+          <div id="time-background" class="progress"></div>
+          <button id="playHead"></button>
+        </div>
+        <span id="duration-text"></span>
       </div>
-      <span id="duration-text"></span>
     </div>
-  </footer>
-  <footer id="video-control-bar">
-    <div id="video-tool-bar">
-      <button id="seek-backward" class="player-controls-button" data-icon="skip-back"></button>
-      <button id="play" class="player-controls-button" data-icon="pause"></button>
-      <button id="seek-forward" class="player-controls-button" data-icon="skip-forward"></button>
+    <div id="video-control-bar">
+      <div id="video-tool-bar">
+        <button id="seek-backward" class="player-controls-button" data-icon="skip-back"></button>
+        <button id="play" class="player-controls-button" data-icon="pause"></button>
+        <button id="seek-forward" class="player-controls-button" data-icon="skip-forward"></button>
+      </div>
     </div>
-  </footer>`
+  </div>`
 });
 
 
