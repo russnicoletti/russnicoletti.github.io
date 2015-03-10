@@ -388,6 +388,7 @@ var Component = require('gaia-component');
 ** MediaControlsImpl object
 */
 function MediaControlsImpl(mediaControlsElement, shadowRoot) {
+  this.shadowRoot = shadowRoot;
   this.mediaControlsElement = mediaControlsElement;
   this.touchStartID = null;
   this.isPausedWhileDragging = null;
@@ -401,31 +402,30 @@ function MediaControlsImpl(mediaControlsElement, shadowRoot) {
   this.mediaPlayer = document.getElementById(mediaControlsElement.mediaPlayerId);
 
   this.els = {
-    durationText: shadowRoot.getElementById('duration-text'),
-    elapsedText: shadowRoot.getElementById('elapsed-text'),
-    elapsedTime: shadowRoot.getElementById('elapsed-time'),
-    play: shadowRoot.getElementById('play'),
-    playHead: shadowRoot.getElementById('playHead'),
-    seekForward: shadowRoot.getElementById('seek-forward'),
-    seekBackward: shadowRoot.getElementById('seek-backward'),
-    sliderWrapper: shadowRoot.getElementById('slider-wrapper')
+    durationText: this.shadowRoot.getElementById('duration-text'),
+    elapsedText: this.shadowRoot.getElementById('elapsed-text'),
+    elapsedTime: this.shadowRoot.getElementById('elapsed-time'),
+    play: this.shadowRoot.getElementById('play'),
+    playHead: this.shadowRoot.getElementById('play-head'),
+    seekForward: this.shadowRoot.getElementById('seek-forward'),
+    seekBackward: this.shadowRoot.getElementById('seek-backward'),
+    sliderWrapper: this.shadowRoot.getElementById('slider-wrapper')
   };
 
-  this.isDevice = (this.els.sliderWrapper.clientWidth <= 200);
+  // FastSeek appears to not work well in the browser...
+  this.useFastSeek = /mobile/i.test(navigator.userAgent);
 
-  this.addEventListeners(shadowRoot);
+  this.addEventListeners();
 }
 
-MediaControlsImpl.prototype.addEventListeners = function(shadowRoot) {
-  shadowRoot.addEventListener('contextmenu', this);
-  shadowRoot.addEventListener('touchend', this);
-  shadowRoot.addEventListener('click', this);
-  shadowRoot.addEventListener('touchstart', this);
-  shadowRoot.addEventListener('touchmove', this);
-  shadowRoot.addEventListener('touchend', this);
-  shadowRoot.addEventListener('mousedown', this);
-  shadowRoot.addEventListener('mousemove', this);
-  shadowRoot.addEventListener('mouseup', this);
+MediaControlsImpl.prototype.addEventListeners = function() {
+  this.shadowRoot.addEventListener('contextmenu', this);
+  this.shadowRoot.addEventListener('touchend', this);
+  this.shadowRoot.addEventListener('click', this);
+  this.shadowRoot.addEventListener('touchstart', this);
+  this.shadowRoot.addEventListener('touchmove', this);
+  this.shadowRoot.addEventListener('touchend', this);
+  this.shadowRoot.addEventListener('mousedown', this);
 
   this.mediaPlayer.addEventListener('loadedmetadata', this);
   this.mediaPlayer.addEventListener('play', this);
@@ -437,86 +437,91 @@ MediaControlsImpl.prototype.addEventListeners = function(shadowRoot) {
 
 MediaControlsImpl.prototype.handleEvent = function(e) {
 
-  switch(e.target) {
-    case this.els.play:
-      if (e.type === 'click') {
+  if (e.type === 'click') {
+    switch(e.target) {
+      case this.els.play:
         this.handlePlayButton();
-      }
-    break;
+        break;
 
-    case this.els.seekForward:
-      if (e.type === 'click') {
+      case this.els.seekForward:
         this.handleSeekForward();
-      }
-      else if (e.type === 'contextmenu') {
-        this.handleStartLongPressing(e);
-      }
-      else if (e.type === 'touchend') {
-        this.handleLongPressStop();
-      }
-    break;
+        break;
 
-    case this.els.seekBackward:
-      if (e.type === 'click') {
+      case this.els.seekBackward:
         this.handleSeekBackward();
+        break;
+    }
+  }
+  else if (e.type === 'contextmenu') {
+    // handleStartLongPressing determines whether the event target is
+    // seekForward or seekBackward and takes the appropriate action.
+    this.handleStartLongPressing(e);
+  }
+  else if (e.target === this.els.sliderWrapper && (e.type === 'touchstart' || e.type === 'mousedown' ||
+           e.type === 'touchmove') ||
+           e.type === 'mousemove') {
+
+    function getClientX(event) {
+      if (event instanceof MouseEvent) {
+        return event.clientX;
       }
-      else if (e.type === 'contextmenu') {
-        this.handleStartLongPressing(e);
+      else if (event instanceof TouchEvent) {
+        return event.changedTouches[0].clientX;
       }
-      else if (e.type === 'touchend') {
+    }
+
+    switch(e.type) {
+      case 'touchstart':
+      case 'mousedown':
+        if (e.type === 'mousedown') {
+          window.addEventListener('mousemove', this, true);
+          window.addEventListener('mouseup', this, true);
+        }
+
+        this.handleSliderMoveStart(getClientX(e));
+        break;
+
+      case 'touchmove':
+      case 'mousemove':
+        this.handleSliderMove(getClientX(e));
+        break;
+    }
+  }
+  else if (e.type === 'touchend') {
+    switch (e.target) {
+      case this.els.seekForward:
+      case this.els.seekBackward:
         this.handleLongPressStop();
-      }
-    break;
+        break;
+      case this.els.sliderWrapper:
+        this.handleSliderMoveEnd();
+        break;
+    }
+  }
+  else if (e.type === 'mouseup') {
+    this.handleSliderMoveEnd();
 
-    case this.els.sliderWrapper:
-
-      function getClientX(event) {
-        if (event instanceof MouseEvent) {
-          return event.clientX;
-        }
-        else if (event instanceof TouchEvent) {
-          return event.changedTouches[0].clientX;
-        }
-      }
-
-      switch(e.type) {
-        case 'touchstart':
-        case 'mousedown':
-          this.handleSliderMoveStart(getClientX(e));
-          break;
-        case 'touchmove':
-        case 'mousemove':
-          this.handleSliderMove(getClientX(e));
-          break;
-        case 'touchend':
-        case 'mouseup':
-          this.handleSliderMoveEnd();
-          break;
-      }
-      break;
-
-      case this.mediaPlayer:
-        switch(e.type) {
-          case 'loadedmetadata':
-            this.handleLoadedMetadata();
-            break;
-          case 'play':
-            this.handleMediaPlaying();
-            break;
-          case 'pause':
-            this.handleMediaPaused();
-            break;
-          case 'timeupdate':
-            this.handleMediaTimeUpdated();
-            break;
-          case 'seeked':
-            this.handleMediaSeeked();
-            break;
-          case 'ended':
-            this.handlePlayerEnded();
-            break;
-        }
-      break;
+    // Don't need to listen for mousemove and mouseup until we get a mousedown
+    window.removeEventListener('mousemove', this, true);
+    window.removeEventListener('mouseup', this, true);
+  }
+  else if (e.type === 'loadedmetadata') {
+    this.handleLoadedMetadata();
+  }
+  else if (e.type === 'play') {
+    this.handleMediaPlaying();
+  }
+  else if (e.type === 'pause') {
+    this.handleMediaPaused();
+  }
+  else if (e.type === 'timeupdate') {
+    this.handleMediaTimeUpdated();
+  }
+  else if (e.type === 'seeked') {
+    this.handleMediaSeeked();
+  }
+  else if (e.type === 'ended') {
+    this.handlePlayerEnded();
   }
 };
 
@@ -685,6 +690,7 @@ MediaControlsImpl.prototype.playerEnded = function() {
 };
 
 MediaControlsImpl.prototype.handleSliderMoveStart = function(clientX) {
+
   // If we already have a touch start event, we don't need others.
   if (this.dragging) {
     return false;
@@ -845,7 +851,7 @@ MediaControlsImpl.prototype.seekVideo = function(seekTime) {
 };
 
 MediaControlsImpl.prototype.moveMediaPlayerPosition = function(pos) {
-  if (this.isDevice) {
+  if (this.useFastSeek) {
     this.mediaPlayer.fastSeek(pos);
   }
   else {
@@ -890,83 +896,70 @@ var MediaControls = Component.register('gaia-media-controls', {
   }
 
   #media-controls-container {
-    position: absolute;
     background-color: rgba(0,0,0, 0.85);
-    left: 0;
-    right: 0;
-    bottom: 0;
+    display: flex;
+    flex-flow: column;
+    align-items: flex-start;
   }
 
   /* video bar -- duration, time slider, elapsed time */
-  #video-bar {
-    position: relative;
-    height: 4rem;
+  #time-slider-bar {
+    display: flex;
+    flex-flow: row;
+    justify-content: center;
     font-size: 0;
     border-bottom: 0.1rem solid rgba(255,255,255, 0.1);
     white-space: nowrap;
     z-index: 10;
+    width: 100%;
   }
 
   /* Support for web-based demo */
   @media screen and (min-width: 600px) and (max-width: 2000px) {
     #media-controls-container {
-      left: 25%;
-      right: 25%;
-      bottom: 10%;
+      width: 50%;
     }
-    #video-bar {
-      bottom: calc(25% + 4.4rem);
-    }
-  }
-
-  #video-bar:last-child {
-    bottom: 0;
   }
 
   #elapsed-text,
-  #time-slider,
   #slider-wrapper,
   #duration-text {
-    display: inline-block;
-    position: relative;
+    /* The slider elements do not grow and shrink via the flexbox. The slider
+       bar grows and shrinks via the dynamic width of the slider. */
+    flex-grow: 0;
+    flex-shrink: 0;
+
     line-height: 4.2rem;
-    vertical-align: top;
   }
 
+  /* 1. elapsed-text and duration-text have padding on left and right
+        to support ltr and rtl locales */
   #elapsed-text, #duration-text {
     color: #ffffff;
     font-size: 1.4rem;
+    padding: 0 1.5rem; /* 1 */
+    text-align: center;
+    width: 3.8rem;
+    margin-top: 0.3rem;
   }
 
-  /* elapsed-text and duration-text have padding on left and right
-     to support ltr and rtl locales */
   #elapsed-text {
-    width: 3.8rem;
-    padding: 0 1.5rem;
-    text-align: center;
-  }
-
-  #duration-text {
-    width: 3.8rem;
-    padding: 0 1.5rem;
-    text-align: center;
-  }
-
-  /* time slider */
-  #time-slider {
-    position: relative;
-    width: 100%;
-    z-index: 10;
+	  order: 1;
   }
 
   #slider-wrapper {
+    order: 2;
     /* Take into account width and padding of elapsed and duration text */
     width: calc(100% - 13.6rem);
     height: 4.2rem;
   }
 
+  #duration-text {
+	  order: 3;
+  }
+ 
   #slider-wrapper div {
-    position: absolute;
+    position: relative;
     pointer-events: none;
   }
 
@@ -974,13 +967,11 @@ var MediaControls = Component.register('gaia-media-controls', {
     height: 0.3rem;
     width: 0;
     top: 50%;
-    margin-top: -0.1rem;
   }
 
   #elapsed-time {
     background-color: #00caf2;
     z-index: 30;
-    margin-top: -0.2rem;
   }
 
   #buffered-time {
@@ -991,13 +982,13 @@ var MediaControls = Component.register('gaia-media-controls', {
   #time-background {
     width: 100%;
     height: 0.1rem;
+    margin-top: -0.5rem;
     background-color: #a6b4b6;
     z-index: 10;
   }
 
-  #playHead {
-    position: absolute;
-    top: calc(50% - 1.15rem);
+  #play-head {
+    position: relative;
     width: 2.3rem;
     height: 2.3rem;
 
@@ -1019,7 +1010,7 @@ var MediaControls = Component.register('gaia-media-controls', {
     z-index: 40;
   }
 
-  #playHead:after {
+  #play-head:after {
     content: "";
     position: absolute;
     top: calc(50% - 1.15rem);
@@ -1030,7 +1021,7 @@ var MediaControls = Component.register('gaia-media-controls', {
     background-color: #fff;
   }
 
-  #playHead.active:before {
+  #play-head.active:before {
     content: "";
     position: absolute;
     top: calc(50% - 3.05rem);
@@ -1043,28 +1034,27 @@ var MediaControls = Component.register('gaia-media-controls', {
 
   /* video control bar -- rewind, pause/play, forward */
   #video-control-bar {
+    display: flex;
+    flex-flow: row;
+    justify-content: center;
     opacity: 0.95;
-    position: relative;
-    z-index: 10;
-    height: 4.5rem;
-  }
-
-  #video-tool-bar {
-    position: relative;
     height: 4.8rem;
+    width: 100%;
     font-size: 0;
-    vertical-align: top;
     border-top: 0.1rem solid rgba(255,255,255, 0.1);
     background-color: #000;
     overflow: hidden;
-    direction: ltr
+    direction: ltr;
+    z-index: 10;
   }
 
   #seek-backward,
   #seek-forward,
   #play {
-    position: relative;
-    height: 100%;
+    /* All three elements grow and shrink together by the same proportion */
+    flex-grow: 1;
+    flex-shrink: 1;
+
     padding: 0;
     font-weight: 500;
     background-position: center center;
@@ -1072,14 +1062,21 @@ var MediaControls = Component.register('gaia-media-controls', {
     background-size: 3rem;
   }
 
-  #seek-backward,
-  #seek-forward {
+  #seek-backward {
+    order: 1;
     width: 33%;
   }
 
   #play {
+    order: 2;
     width: 34%;
   }
+
+  #seek-forward {
+    order: 3;
+    width: 33%;
+  }
+
 
   #play.paused:before {
     content: 'play';
@@ -1112,24 +1109,20 @@ var MediaControls = Component.register('gaia-media-controls', {
   </style>
 
   <div id="media-controls-container">
-    <div id="video-bar">
-      <div id="time-slider">
-        <span id="elapsed-text"></span>
-        <div id="slider-wrapper">
-          <div id="elapsed-time" class="progress"></div>
-          <div id="buffered-time" class="progress"></div>
-          <div id="time-background" class="progress"></div>
-          <button id="playHead"></button>
-        </div>
-        <span id="duration-text"></span>
+    <div id="time-slider-bar">
+      <span id="elapsed-text"></span>
+      <div id="slider-wrapper">
+        <div id="elapsed-time" class="progress"></div>
+        <div id="buffered-time" class="progress"></div>
+        <div id="time-background" class="progress"></div>
+        <button id="play-head"></button>
       </div>
+      <span id="duration-text"></span>
     </div>
     <div id="video-control-bar">
-      <div id="video-tool-bar">
-        <button id="seek-backward" class="player-controls-button" data-icon="skip-back"></button>
-        <button id="play" class="player-controls-button" data-icon="pause"></button>
-        <button id="seek-forward" class="player-controls-button" data-icon="skip-forward"></button>
-      </div>
+      <button id="seek-backward" class="player-controls-button" data-icon="skip-back"></button>
+      <button id="play" class="player-controls-button" data-icon="pause"></button>
+      <button id="seek-forward" class="player-controls-button" data-icon="skip-forward"></button>
     </div>
   </div>`
 });
