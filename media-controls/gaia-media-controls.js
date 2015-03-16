@@ -388,18 +388,17 @@ var Component = require('gaia-component');
 ** MediaControlsImpl object
 */
 function MediaControlsImpl(mediaControlsElement, shadowRoot) {
-  this.shadowRoot = shadowRoot;
   this.mediaControlsElement = mediaControlsElement;
+  this.shadowRoot = shadowRoot;
   this.touchStartID = null;
   this.isPausedWhileDragging = null;
   this.dragging = false;
   this.sliderRect = null;
-  this.endedTimer = null;
   this.playedUntilEnd = false;
-  this.isLongPressing = false;
   this.intervalId = null;
   this.pausedAtEndWhilePlaying = false;
-  this.mediaPlayer = document.getElementById(mediaControlsElement.mediaPlayerId);
+  this.mediaPlayer = null;
+  this.seekIncrement = 10; // Seek forward/backward in 10 second increments
 
   this.els = {
     durationText: this.shadowRoot.getElementById('duration-text'),
@@ -416,17 +415,23 @@ function MediaControlsImpl(mediaControlsElement, shadowRoot) {
   this.useFastSeek = /mobile/i.test(navigator.userAgent);
 
   this.addEventListeners();
+
+  if (mediaControlsElement.mediaPlayerId) {
+    this.onMediaPlayerChanged();
+  }
 }
 
 MediaControlsImpl.prototype.addEventListeners = function() {
   this.shadowRoot.addEventListener('contextmenu', this);
   this.shadowRoot.addEventListener('touchend', this);
-  this.shadowRoot.addEventListener('click', this);
   this.shadowRoot.addEventListener('touchstart', this);
   this.shadowRoot.addEventListener('touchmove', this);
   this.shadowRoot.addEventListener('touchend', this);
   this.shadowRoot.addEventListener('mousedown', this);
+  this.shadowRoot.addEventListener('mouseup', this);
+};
 
+MediaControlsImpl.prototype.addMediaPlayerEventListeners = function() {
   this.mediaPlayer.addEventListener('loadedmetadata', this);
   this.mediaPlayer.addEventListener('play', this);
   this.mediaPlayer.addEventListener('pause', this);
@@ -435,29 +440,180 @@ MediaControlsImpl.prototype.addEventListeners = function() {
   this.mediaPlayer.addEventListener('ended', this);
 };
 
+MediaControlsImpl.prototype.removeMediaPlayerEventListeners = function() {
+  this.mediaPlayer.removeEventListener('loadedmetadata', this);
+  this.mediaPlayer.removeEventListener('play', this);
+  this.mediaPlayer.removeEventListener('pause', this);
+  this.mediaPlayer.removeEventListener('timeupdate', this)
+  this.mediaPlayer.removeEventListener('seeked', this);
+  this.mediaPlayer.removeEventListener('ended', this);
+};
+
 MediaControlsImpl.prototype.handleEvent = function(e) {
 
-  if (e.type === 'click') {
-    switch(e.target) {
-      case this.els.play:
-        this.handlePlayButton();
+  // If we get a touchstart, don't process mouse events
+  if (e.type === 'touchstart') {
+    this.shadowRoot.removeEventListener('mousedown', this);
+    this.shadowRoot.removeEventListener('mousemove', this);
+    this.shadowRoot.removeEventListener('mouseup', this);
+  }
+
+  switch(e.type) {
+
+    case 'mousedown':
+          // The component is listening to window 'mousemove' events so
+          // that the slider movement will function even when the mouse
+          // moves off the play head. However, if the component is always
+          // listening to the window events, it would receive very many
+          // spurious 'mousemove' events. To prevent this, the component
+          // only listens to 'mousemove' events after receiving a 'mousedown'
+          // event.
+          window.addEventListener('mousemove', this, true);
+          window.addEventListener('mouseup', this, true);
+
+          // fall through to touchstart...
+
+    case 'touchstart':
+      switch(e.target) {
+        case this.els.play:
+          //
+          // Let the 'play' and 'pause' handlers take care of changing
+          // the icon and setting the l10n-id (for the screen reader).
+          //
+          if (this.mediaPlayer.paused) {
+            this.mediaPlayer.play();
+          }
+          else {
+            this.mediaPlayer.pause();
+          }
+          break;
+
+        case this.els.seekForward:
+        case this.els.seekBackward:
+
+          var direction = null;
+          if (e.target === this.els.seekForward) {
+            direction = 1;
+          } else if (e.target === this.els.seekBackward) {
+            direction = -1;
+          } else {
+            return;
+          }
+
+          var offset = direction * 10;
+          this.seekBy(this.mediaPlayer.currentTime + offset);
+
+          // Begin the "longpress" movement after a one second delay.
+          var self = this;
+          this.intervalId = window.setInterval(function() {
+              self.seekBy(self.mediaPlayer.currentTime + offset);
+            }, 1000);
+          break;
+      }
+      break;
+
+      case 'touchend':
+      case 'mouseup':
+        // If ending a long-press forward or backward, clear timer
+        if (this.intervalId) {
+           window.clearInterval(this.intervalId);
+           this.intervalId = null;
+        }
+        else if (this.dragging) {
+          // If ending a movement of the slider, end slider movement
+          this.handleSliderMoveEnd();
+        }
+
+        if (e.type === 'mouseup') {
+          // Don'listen for mousemove and mouseup until we get a mousedown
+          window.removeEventListener('mousemove', this, true);
+          window.removeEventListener('mouseup', this, true);
+        }
         break;
 
-      case this.els.seekForward:
-        this.handleSeekForward();
-        break;
+    case 'loadedmetadata':
+      //
+      // Metadata has been loaded, now we can set the duration of the media
+      //
+      this.els.durationText.textContent = this.formatTime(this.mediaPlayer.duration);
+      break;
 
-      case this.els.seekBackward:
-        this.handleSeekBackward();
-        break;
-    }
+    case 'play':
+      //
+      // Media is playing, display 'paused' icon
+      //
+      this.els.play.classList.remove('paused');
+
+      // Update l10n-id for the benefit of the screen reader
+      this.els.play.setAttribute('data-l10n-id', 'playbackPlay');
+      break;
+
+    case 'pause':
+      //
+      // Media is paused, display 'play' icon
+      //
+      this.els.play.classList.add('paused');
+
+      // Update l10n-id for the benefit of the screen reader
+      this.els.play.setAttribute('data-l10n-id', 'playbackPause');
+
+      // If the paused event comes when the media is at the end,
+      // set our 'played-till-end' flag. The one exception is when
+      // the paused event comes from pausing the media when the
+      // forward button was used to seek to the end while the media
+      // was playing. In this case, we don't consider the media being
+      // played until the end.
+      if (this.mediaPlayer.currentTime === this.mediaPlayer.duration) {
+        if (this.pausedAtEndWhilePlaying) {
+          this.pausedAtEndWhilePlaying = false;
+        }
+        else {
+          this.playedUntilEnd = true;
+        }
+      }
+      break;
+
+    case 'timeupdate':
+      //
+      // Update the progress bar and play head as the video plays
+      //
+      if (!this.mediaControlsElement.hidden) {
+        // We can't update a progress bar if we don't know how long
+        // the video is.
+        if (this.mediaPlayer.duration === Infinity || this.mediaPlayer.duration === 0) {
+          return;
+        }
+
+        this.updateMediaControlSlider();
+      }
+      break;
+
+    case 'seeked':
+      //
+      // Update the position of the slider when the video position has been
+      // moved.
+      //
+      this.updateMediaControlSlider();
+      break;
+
+    case 'ended':
+      //
+      // Ignore ended events that occur while the user is dragging the slider
+      //
+      if (this.dragging) {
+        return;
+      }
+
+      // If the media was played until the end (as opposed to being forwarded
+      // to the end, position the player at the beginning of the video.
+      if (this.playedUntilEnd) {
+        this.mediaPlayer.currentTime = 0;
+        this.playedUntilEnd = false;
+      }
+      break;
   }
-  else if (e.type === 'contextmenu') {
-    // handleStartLongPressing determines whether the event target is
-    // seekForward or seekBackward and takes the appropriate action.
-    this.handleStartLongPressing(e);
-  }
-  else if (e.target === this.els.sliderWrapper && (e.type === 'touchstart' || e.type === 'mousedown' ||
+
+  if (e.target === this.els.sliderWrapper && (e.type === 'touchstart' || e.type === 'mousedown' ||
            e.type === 'touchmove') ||
            e.type === 'mousemove') {
 
@@ -487,166 +643,9 @@ MediaControlsImpl.prototype.handleEvent = function(e) {
         break;
     }
   }
-  else if (e.type === 'touchend') {
-    switch (e.target) {
-      case this.els.seekForward:
-      case this.els.seekBackward:
-        this.handleLongPressStop();
-        break;
-      case this.els.sliderWrapper:
-        this.handleSliderMoveEnd();
-        break;
-    }
-  }
-  else if (e.type === 'mouseup') {
-    this.handleSliderMoveEnd();
-
-    // Don't need to listen for mousemove and mouseup until we get a mousedown
-    window.removeEventListener('mousemove', this, true);
-    window.removeEventListener('mouseup', this, true);
-  }
-  else if (e.type === 'loadedmetadata') {
-    this.handleLoadedMetadata();
-  }
-  else if (e.type === 'play') {
-    this.handleMediaPlaying();
-  }
-  else if (e.type === 'pause') {
-    this.handleMediaPaused();
-  }
-  else if (e.type === 'timeupdate') {
-    this.handleMediaTimeUpdated();
-  }
-  else if (e.type === 'seeked') {
-    this.handleMediaSeeked();
-  }
-  else if (e.type === 'ended') {
-    this.handlePlayerEnded();
-  }
-};
-
-MediaControlsImpl.prototype.handleSeekForward = function() {
-  this.startFastSeeking(1);
-};
-
-MediaControlsImpl.prototype.handleSeekBackward = function() {
-  this.startFastSeeking(-1);
-};
-
-MediaControlsImpl.prototype.handlePlayButton = function() {
-  // Let the 'play' and 'pause' handlers take care of changing
-  // the icon and setting the l10n-id (for the screen reader).
-  if (this.mediaPlayer.paused) {
-    this.mediaPlayer.play();
-  }
-  else {
-    this.mediaPlayer.pause();
-  }
-};
-
-MediaControlsImpl.prototype.handleStartLongPressing = function(event) {
-  if (event.target === this.els.seekForward) {
-    this.handleLongPressForward();
-  } else if (event.target === this.els.seekBackward) {
-    this.handleLongPressBackward();
-  } else {
-    return;
-  }
-};
-
-MediaControlsImpl.prototype.handleLongPressForward = function() {
-  this.isLongPressing = true;
-  this.startFastSeeking(1);
-};
-
-MediaControlsImpl.prototype.handleLongPressBackward = function() {
-  this.isLongPressing = true;
-  this.startFastSeeking(-1);
-};
-
-MediaControlsImpl.prototype.handleLongPressStop = function() {
-  this.stopFastSeeking();
-};
-
-MediaControlsImpl.prototype.handleMediaPlaying = function() {
-
-  this.els.play.classList.remove('paused');
-
-  // Update l10n-id for the benefit of the screen reader
-  this.els.play.setAttribute('data-l10n-id', 'playbackPlay');
-};
-
-MediaControlsImpl.prototype.handleMediaPaused = function() {
-
-  this.els.play.classList.add('paused');
-
-  // Update l10n-id for the benefit of the screen reader
-  this.els.play.setAttribute('data-l10n-id', 'playbackPause');
-
-  // If the paused event comes when the media is at the end,
-  // set our 'played-till-end' flag. The one exception is when
-  // the paused event comes from the forwardRewindController
-  // pausing the media when the forward button was used to seek
-  // to the end while the media was playing. In this case, we
-  // don't consider the media being played until the end.
-  if (this.mediaPlayer.currentTime === this.mediaPlayer.duration) {
-    if (this.pausedAtEndWhilePlaying) {
-      this.pausedAtEndWhilePlaying = false;
-    }
-    else {
-      this.playedUntilEnd = true;
-    }
-  }
-};
-
-MediaControlsImpl.prototype.handleMediaSeeked = function() {
-  this.updateMediaControlSlider();
-};
-
-MediaControlsImpl.prototype.handlePlayerEnded = function() {
-  this.playerEnded();
-};
-
-// Update the progress bar and play head as the video plays
-MediaControlsImpl.prototype.handleMediaTimeUpdated = function() {
-  if (!this.mediaControlsElement.hidden) {
-    // We can't update a progress bar if we don't know how long
-    // the video is. It is kind of a bug that the <video> element
-    // can't figure this out for ogv videos.
-    if (this.mediaPlayer.duration === Infinity || this.mediaPlayer.duration === 0) {
-      return;
-    }
-
-    this.updateMediaControlSlider();
-  }
-
-  // Since we don't always get reliable 'ended' events, see if
-  // we've reached the end this way.
-  // See: https://bugzilla.mozilla.org/show_bug.cgi?id=783512
-  // If we're within 1 second of the end of the video, register
-  // a timeout a half a second after we'd expect an ended event.
-  if (!this.endedTimer) {
-    if (!this.dragging && this.mediaPlayer.currentTime >= this.mediaPlayer.duration - 1) {
-      var timeUntilEnd = (this.mediaPlayer.duration - this.mediaPlayer.currentTime + .5);
-      this.endedTimer = setTimeout(this.playerEnded.bind(this), timeUntilEnd * 1000);
-    }
-  } else if (this.dragging &&
-             this.mediaPlayer.currentTime < this.mediaPlayer.duration - 1) {
-    // If there is a timer set and we drag away from the end, cancel the timer
-    clearTimeout(this.endedTimer);
-    this.endedTimer = null;
-  }
 };
 
 MediaControlsImpl.prototype.updateMediaControlSlider = function() {
-
-  // We update the slider when we get a 'seeked' event.
-  // Don't do updates while we're seeking because the position we fastSeek()
-  // to probably isn't exactly where we requested and we don't want jerky
-  // updates
-  if (this.mediaPlayer.seeking) {
-    return;
-  }
 
   var percent = (this.mediaPlayer.currentTime / this.mediaPlayer.duration) * 100;
   if (isNaN(percent)) {
@@ -654,7 +653,7 @@ MediaControlsImpl.prototype.updateMediaControlSlider = function() {
   }
 
   percent += '%';
-  this.els.elapsedText.textContent = this.formatDuration(this.mediaPlayer.currentTime);
+  this.els.elapsedText.textContent = this.formatTime(this.mediaPlayer.currentTime);
   this.els.elapsedTime.style.width = percent;
 
   // Don't move the play head if the user is dragging it.
@@ -669,23 +668,6 @@ MediaControlsImpl.prototype.movePlayHead = function(percent) {
   }
   else {
     this.els.playHead.style.right = percent;
-  }
-};
-
-MediaControlsImpl.prototype.playerEnded = function() {
-  // Ignore ended events that occur while the user is dragging the slider
-  if (this.dragging) {
-    return;
-  }
-
-  if (this.endedTimer) {
-    clearTimeout(this.endedTimer);
-    this.endedTimer = null;
-  }
-
-  if (this.playedUntilEnd) {
-    this.mediaPlayer.currentTime = 0;
-    this.playedUntilEnd = false;
   }
 };
 
@@ -747,7 +729,7 @@ MediaControlsImpl.prototype.handleSliderMove = function(clientX) {
   this.movePlayHead(percent);
   this.els.elapsedTime.style.width = percent;
 
-  this.moveMediaPlayerPosition(this.mediaPlayer.duration * pos);
+  this.seekTo(this.mediaPlayer.duration * pos);
 };
 
 MediaControlsImpl.prototype.handleSliderMoveEnd = function(event) {
@@ -765,17 +747,13 @@ MediaControlsImpl.prototype.handleSliderMoveEnd = function(event) {
   // If the media was playing when the user began dragging the slider
   // (and the slider was not dragged to the end), begin playing the
   // media.
-  if (!(this.isPausedWhileDragging ||
-        this.mediaPlayer.currentTime === this.mediaPlayer.duration)) {
+  if (!this.isPausedWhileDragging &&
+      this.mediaPlayer.currentTime !== this.mediaPlayer.duration) {
     this.mediaPlayer.play();
   }
 };
 
-MediaControlsImpl.prototype.handleLoadedMetadata = function() {
-  this.els.durationText.textContent = this.formatDuration(this.mediaPlayer.duration);
-};
-
-MediaControlsImpl.prototype.formatDuration = function(duration) {
+MediaControlsImpl.prototype.formatTime = function(duration) {
   function padLeft(num, length) {
     var r = String(num);
     while (r.length < length) {
@@ -795,40 +773,18 @@ MediaControlsImpl.prototype.formatDuration = function(duration) {
   return hours + ':' + padLeft(minutes, 2) + ':' + padLeft(seconds, 2);
 };
 
-MediaControlsImpl.prototype.startFastSeeking = function(direction) {
-
-  // direction can be 1 or -1, 1 means forward and -1 means rewind.
-  var offset = direction * 10;
-
-  var seekOnInterval = function () {
-      this.seekVideo(this.mediaPlayer.currentTime + offset);
-  };
-
-  if (this.isLongPressing) {
-    // If we're already handling a long-press, don't process other
-    // seeking events
-    if (this.intervalId) {
-      return;
-    }
-    this.intervalId = window.setInterval(seekOnInterval.bind(this), 1000);
-  } else {
-    this.seekVideo(this.mediaPlayer.currentTime + offset);
-  }
-};
-
-MediaControlsImpl.prototype.stopFastSeeking = function() {
-  if (this.isLongPressing && this.intervalId) {
-     window.clearInterval(this.intervalId);
-     this.intervalId = null;
-     this.isLongPressing = false;
-  }
-};
-
-MediaControlsImpl.prototype.seekVideo = function(seekTime) {
+MediaControlsImpl.prototype.seekBy = function(seekTime) {
+  //
+  // If seeking will move the media position before the beginning or past
+  // the end, stop the auto-seeking (if in progress) and position the media
+  // accordingly.
+  //
   if (seekTime >= this.mediaPlayer.duration || seekTime < 0) {
-    if (this.isLongPressing) {
-      this.stopFastSeeking();
+    if (this.intervalId) {
+       window.clearInterval(this.intervalId);
+       this.intervalId = null;
     }
+
     if (seekTime >= this.mediaPlayer.duration) {
       seekTime = this.mediaPlayer.duration;
       // If the user tries to seek past the end of the media while the media
@@ -847,10 +803,10 @@ MediaControlsImpl.prototype.seekVideo = function(seekTime) {
     }
   }
 
-  this.moveMediaPlayerPosition(seekTime);
+  this.seekTo(seekTime);
 };
 
-MediaControlsImpl.prototype.moveMediaPlayerPosition = function(pos) {
+MediaControlsImpl.prototype.seekTo = function(pos) {
   if (this.useFastSeek) {
     this.mediaPlayer.fastSeek(pos);
   }
@@ -859,16 +815,78 @@ MediaControlsImpl.prototype.moveMediaPlayerPosition = function(pos) {
   }
 };
 
+MediaControlsImpl.prototype.attachPlayer = function(player) {
+  if (this.mediaPlayer) {
+    this.removeMediaPlayerEventListeners();
+  }
+
+  this.mediaPlayer = player;
+  this.addMediaPlayerEventListeners();
+};
+
+MediaControlsImpl.prototype.detachPlayer = function(player) {
+  if (this.mediaPlayer) {
+    this.removeMediaPlayerEventListeners();
+  }
+
+  this.mediaPlayer = null;
+};
+
+MediaControlsImpl.prototype.onMediaPlayerChanged = function() {
+  if (this.mediaPlayer) {
+    this.removeMediaPlayerEventListeners();
+  }
+
+  this.mediaPlayer =
+    document.getElementById(this.mediaControlsElement.mediaPlayerId);
+
+  this.addMediaPlayerEventListeners();
+};
+
 var MediaControls = Component.register('gaia-media-controls', {
   /**
    * 'createdCallback' is called when the element is first created.
    */
   created: function() {
-    console.log(Date.now() + '--' + 'creating gaia-media-controls web component...');
+    console.log('creating gaia-media-controls web component...');
 
     var shadowRoot = this.setupShadowRoot();
     this.mediaPlayerId = this.getAttribute('media-player-id');
     this.mediaControlsImpl = new MediaControlsImpl(this, shadowRoot);
+  },
+
+  attachPlayer: function(player) {
+    this.mediaPlayerImpl.attachPlayer(player);
+  },
+
+  detachPlayer: function() {
+    this.mediaPlayerImpl.detachPlayer();
+  },
+
+  /**
+   * Known attribute property descriptors.
+   *
+   * These setters get called when matching
+   * attributes change on the element.
+   *
+   * @type {Object}
+   */
+  attrs: {
+    mediaPlayerId: {
+      get: function() { return this._mediaPlayerId || false; },
+      set: function(value) {
+
+        if (value === this.mediaPlayerId) { return; }
+        this._mediaPlayerId = value;
+
+        // If the media player id attribute changed after the media controls
+        // element has been created, notify the implementation object so that
+        // the new player can be loaded.
+        if (this.mediaControlsImpl) {
+          this.mediaControlsImpl.onMediaPlayerChanged();
+        }
+      }
+    }
   },
 
   template: `
@@ -957,7 +975,7 @@ var MediaControls = Component.register('gaia-media-controls', {
   #duration-text {
 	  order: 3;
   }
- 
+
   #slider-wrapper div {
     position: relative;
     pointer-events: none;
@@ -1126,7 +1144,6 @@ var MediaControls = Component.register('gaia-media-controls', {
     </div>
   </div>`
 });
-
 
 
 },{"gaia-component":1}]},{},[2]);
