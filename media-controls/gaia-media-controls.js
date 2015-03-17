@@ -387,7 +387,7 @@ var Component = require('gaia-component');
 /*
 ** MediaControlsImpl object
 */
-function MediaControlsImpl(mediaControlsElement, shadowRoot) {
+function MediaControlsImpl(mediaControlsElement, shadowRoot, player) {
   this.mediaControlsElement = mediaControlsElement;
   this.shadowRoot = shadowRoot;
   this.touchStartID = null;
@@ -397,8 +397,9 @@ function MediaControlsImpl(mediaControlsElement, shadowRoot) {
   this.playedUntilEnd = false;
   this.intervalId = null;
   this.pausedAtEndWhilePlaying = false;
-  this.mediaPlayer = null;
+  this.mediaPlayer = player;
   this.seekIncrement = 10; // Seek forward/backward in 10 second increments
+  this.mouseEventHandlerRegistered = false;
 
   this.els = {
     durationText: this.shadowRoot.getElementById('duration-text'),
@@ -415,10 +416,6 @@ function MediaControlsImpl(mediaControlsElement, shadowRoot) {
   this.useFastSeek = /mobile/i.test(navigator.userAgent);
 
   this.addEventListeners();
-
-  if (mediaControlsElement.mediaPlayerId) {
-    this.onMediaPlayerChanged();
-  }
 }
 
 MediaControlsImpl.prototype.addEventListeners = function() {
@@ -428,10 +425,7 @@ MediaControlsImpl.prototype.addEventListeners = function() {
   this.shadowRoot.addEventListener('touchmove', this);
   this.shadowRoot.addEventListener('touchend', this);
   this.shadowRoot.addEventListener('mousedown', this);
-  this.shadowRoot.addEventListener('mouseup', this);
-};
-
-MediaControlsImpl.prototype.addMediaPlayerEventListeners = function() {
+ 
   this.mediaPlayer.addEventListener('loadedmetadata', this);
   this.mediaPlayer.addEventListener('play', this);
   this.mediaPlayer.addEventListener('pause', this);
@@ -440,13 +434,27 @@ MediaControlsImpl.prototype.addMediaPlayerEventListeners = function() {
   this.mediaPlayer.addEventListener('ended', this);
 };
 
-MediaControlsImpl.prototype.removeMediaPlayerEventListeners = function() {
+MediaControlsImpl.prototype.removeEventListeners = function() {
+  this.shadowRoot.removeEventListener('contextmenu', this);
+  this.shadowRoot.removeEventListener('touchend', this);
+  this.shadowRoot.removeEventListener('touchstart', this);
+  this.shadowRoot.removeEventListener('touchmove', this);
+  this.shadowRoot.removeEventListener('touchend', this);
+  this.shadowRoot.removeEventListener('mousedown', this);
+ 
   this.mediaPlayer.removeEventListener('loadedmetadata', this);
   this.mediaPlayer.removeEventListener('play', this);
   this.mediaPlayer.removeEventListener('pause', this);
   this.mediaPlayer.removeEventListener('timeupdate', this)
   this.mediaPlayer.removeEventListener('seeked', this);
   this.mediaPlayer.removeEventListener('ended', this);
+
+  if (this.mouseEventHandlerRegistered) {
+    this.shadowRoot.removeEventListener('mousemove', this, true);
+    this.shadowRoot.removeEventListener('mouseup', this, true);
+  }
+
+  this.mouseEventHandlerRegistered = false;
 };
 
 MediaControlsImpl.prototype.handleEvent = function(e) {
@@ -470,6 +478,7 @@ MediaControlsImpl.prototype.handleEvent = function(e) {
           // event.
           window.addEventListener('mousemove', this, true);
           window.addEventListener('mouseup', this, true);
+          this.mouseEventHandlerRegistered = true;
 
           // fall through to touchstart...
 
@@ -528,6 +537,7 @@ MediaControlsImpl.prototype.handleEvent = function(e) {
           // Don'listen for mousemove and mouseup until we get a mousedown
           window.removeEventListener('mousemove', this, true);
           window.removeEventListener('mouseup', this, true);
+          this.mouseEventHandlerRegistered = false;
         }
         break;
 
@@ -815,32 +825,8 @@ MediaControlsImpl.prototype.seekTo = function(pos) {
   }
 };
 
-MediaControlsImpl.prototype.attachPlayer = function(player) {
-  if (this.mediaPlayer) {
-    this.removeMediaPlayerEventListeners();
-  }
-
-  this.mediaPlayer = player;
-  this.addMediaPlayerEventListeners();
-};
-
-MediaControlsImpl.prototype.detachPlayer = function(player) {
-  if (this.mediaPlayer) {
-    this.removeMediaPlayerEventListeners();
-  }
-
-  this.mediaPlayer = null;
-};
-
-MediaControlsImpl.prototype.onMediaPlayerChanged = function() {
-  if (this.mediaPlayer) {
-    this.removeMediaPlayerEventListeners();
-  }
-
-  this.mediaPlayer =
-    document.getElementById(this.mediaControlsElement.mediaPlayerId);
-
-  this.addMediaPlayerEventListeners();
+MediaControlsImpl.prototype.unload = function(e) {
+  this.removeEventListeners();
 };
 
 var MediaControls = Component.register('gaia-media-controls', {
@@ -848,44 +834,26 @@ var MediaControls = Component.register('gaia-media-controls', {
    * 'createdCallback' is called when the element is first created.
    */
   created: function() {
-    console.log('creating gaia-media-controls web component...');
-
-    var shadowRoot = this.setupShadowRoot();
-    this.mediaPlayerId = this.getAttribute('media-player-id');
-    this.mediaControlsImpl = new MediaControlsImpl(this, shadowRoot);
+    console.log(Date.now() + '-- creating gaia-media-controls web component...');
   },
 
-  attachPlayer: function(player) {
-    this.mediaPlayerImpl.attachPlayer(player);
+  attachTo: function(player) {
+
+    if (this.mediaPlayerImpl) {
+      throw new Error('A media player is already attached to the media controls component');
+    }
+
+    if (!this.shadowRoot) {
+      this.shadowRoot = this.setupShadowRoot();
+      console.log(Date.now() + '-- created, shadowRoot: ' + this.shadowRoot);
+    }
+    this.mediaControlsImpl = new MediaControlsImpl(this, this.shadowRoot, player);
   },
 
-  detachPlayer: function() {
-    this.mediaPlayerImpl.detachPlayer();
-  },
-
-  /**
-   * Known attribute property descriptors.
-   *
-   * These setters get called when matching
-   * attributes change on the element.
-   *
-   * @type {Object}
-   */
-  attrs: {
-    mediaPlayerId: {
-      get: function() { return this._mediaPlayerId || false; },
-      set: function(value) {
-
-        if (value === this.mediaPlayerId) { return; }
-        this._mediaPlayerId = value;
-
-        // If the media player id attribute changed after the media controls
-        // element has been created, notify the implementation object so that
-        // the new player can be loaded.
-        if (this.mediaControlsImpl) {
-          this.mediaControlsImpl.onMediaPlayerChanged();
-        }
-      }
+  detachFrom: function() {
+    if (this.mediaPlayerImpl) {
+      this.mediaPlayerImpl.unload();
+      this.mediaPlayerImpl = null;
     }
   },
 

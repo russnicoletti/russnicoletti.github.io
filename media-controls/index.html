@@ -21,9 +21,17 @@
 <body>
 
   <div id="player-container">
-    <video src="http://videos-cdn.mozilla.net/serv/webmademovies/Moz_Doc_0329_GetInvolved_ST.webm" id="media-player" autoplay="true"></video>
-    <gaia-media-controls id="media-controls" media-player-id="media-player"></gaia-media-controls>
+    <video src="about:blank" id="media-player" autoplay="true"></video>
+    <gaia-media-controls id="media-controls"></gaia-media-controls>
   </div>
 
+  <script>
+    var player = document.getElementById('media-player');
+    var mediaControls = document.getElementById('media-controls');
+
+    mediaControls.attachTo(player);
+    player.preload = 'metadata';
+    player.src = "http://videos-cdn.mozilla.net/serv/webmademovies/Moz_Doc_0329_GetInvolved_ST.webm";
+  </script>
 </body>
 </html>
