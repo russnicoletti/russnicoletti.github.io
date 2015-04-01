@@ -417,15 +417,10 @@ function MediaControlsImpl(mediaControlsElement, shadowRoot, player) {
     sliderWrapper: this.shadowRoot.querySelector('.slider-wrapper')
   };
 
-  // FastSeek appears to not work well in the browser...
-  this.useFastSeek = /mobile/i.test(navigator.userAgent);
-
   this.addEventListeners();
 }
 
 MediaControlsImpl.prototype.addEventListeners = function() {
-  this.shadowRoot.addEventListener('contextmenu', this);
-  this.shadowRoot.addEventListener('touchend', this);
   this.shadowRoot.addEventListener('touchstart', this);
   this.shadowRoot.addEventListener('touchmove', this);
   this.shadowRoot.addEventListener('touchend', this);
@@ -440,8 +435,6 @@ MediaControlsImpl.prototype.addEventListeners = function() {
 };
 
 MediaControlsImpl.prototype.removeEventListeners = function() {
-  this.shadowRoot.removeEventListener('contextmenu', this);
-  this.shadowRoot.removeEventListener('touchend', this);
   this.shadowRoot.removeEventListener('touchstart', this);
   this.shadowRoot.removeEventListener('touchmove', this);
   this.shadowRoot.removeEventListener('touchend', this);
@@ -482,9 +475,12 @@ MediaControlsImpl.prototype.handleEvent = function(e) {
       // spurious 'mousemove' events. To prevent this, the component
       // only listens to 'mousemove' events after receiving a 'mousedown'
       // event.
-      window.addEventListener('mousemove', this, true);
-      window.addEventListener('mouseup', this, true);
-      this.mouseEventHandlerRegistered = true;
+      //
+      if (!this.mouseEventHandlerRegistered) {
+        window.addEventListener('mousemove', this, true);
+        window.addEventListener('mouseup', this, true);
+        this.mouseEventHandlerRegistered = true;
+      }
 
       // fall through to touchstart...
 
@@ -529,7 +525,9 @@ MediaControlsImpl.prototype.handleEvent = function(e) {
 
       case 'touchend':
       case 'mouseup':
+        //
         // If ending a long-press forward or backward, clear timer
+        //
         if (this.intervalId) {
            window.clearInterval(this.intervalId);
            this.intervalId = null;
@@ -540,7 +538,7 @@ MediaControlsImpl.prototype.handleEvent = function(e) {
         }
 
         if (e.type === 'mouseup') {
-          // Don'listen for mousemove and mouseup until we get a mousedown
+          // Don't listen for mousemove and mouseup until we get a mousedown
           window.removeEventListener('mousemove', this, true);
           window.removeEventListener('mouseup', this, true);
           this.mouseEventHandlerRegistered = false;
@@ -707,7 +705,6 @@ MediaControlsImpl.prototype.handleSliderMoveStart = function(clientX) {
 
   // calculate the slider wrapper size for slider dragging.
   this.sliderRect = this.els.sliderWrapper.getBoundingClientRect();
-
   this.handleSliderMove(clientX);
 };
 
@@ -728,6 +725,7 @@ MediaControlsImpl.prototype.handleSliderMove = function(clientX) {
 
   var touchPos = getTouchPos();
   var pos = touchPos / this.sliderRect.width;
+
   pos = Math.max(pos, 0);
   pos = Math.min(pos, 1);
 
@@ -739,10 +737,10 @@ MediaControlsImpl.prototype.handleSliderMove = function(clientX) {
   this.movePlayHead(percent);
   this.els.elapsedTime.style.width = percent;
 
-  this.seekTo(this.mediaPlayer.duration * pos);
+  this.mediaPlayer.fastSeek(this.mediaPlayer.duration * pos);
 };
 
-MediaControlsImpl.prototype.handleSliderMoveEnd = function(event) {
+MediaControlsImpl.prototype.handleSliderMoveEnd = function() {
 
   // If the user is not dragging the slider, noop
   if (!this.dragging) {
@@ -813,15 +811,17 @@ MediaControlsImpl.prototype.seekBy = function(seekTime) {
     }
   }
 
-  this.seekTo(seekTime);
+  this.mediaPlayer.fastSeek(seekTime);
 };
 
 MediaControlsImpl.prototype.seekTo = function(pos) {
-  if (this.useFastSeek) {
-    this.mediaPlayer.fastSeek(pos);
+  if (this.mediaControlsElement.getAttribute('demo')) {
+    console.log('using currentTime');
+    this.mediaPlayer.currentTime = pos;
   }
   else {
-    this.mediaPlayer.currentTime = pos;
+    console.log('using fastSeek');
+    this.mediaPlayer.fastSeek(pos);
   }
 };
 
@@ -829,10 +829,80 @@ MediaControlsImpl.prototype.unload = function(e) {
   this.removeEventListeners();
 };
 
+MediaControlsImpl.prototype.enableComponentTesting = function() {
+  //
+  // Define the buttons used by the component that will emit events
+  //
+  this.buttons = {
+    'play': 'play',
+    'seek-forward': 'seekForward',
+    'seek-backward': 'seekBackward',
+    'slider-wrapper': 'sliderWrapper'
+  };
+
+  // All elements need listeners for 'mousedown' and 'touchstart'
+  for (var button in this.buttons) {
+    this.els[this.buttons[button]].addEventListener('mousedown', this);
+    this.els[this.buttons[button]].addEventListener('touchstart', this);
+  }
+
+  // These elements need listeners for ending a touch
+  // (long-press and slider movement)
+  //
+  // We don't need to explicitly add a 'mouseup' listener as
+  // handleEvent adds a 'mouseup' listener when it processes
+  // 'mousedown' events.
+  this.els.seekForward.addEventListener('touchend', this);
+  this.els.seekBackward.addEventListener('touchend', this);
+  this.els.sliderWrapper.addEventListener('touchend', this);
+
+  // Support for moving the slider.
+  // We don't need to explicitly add a 'mousemove' listener as
+  // handleEvent adds a 'mousemove' listener when it processes
+  // 'mousedown' events.
+  this.els.sliderWrapper.addEventListener('touchmove', this);
+};
+
+MediaControlsImpl.prototype.disableComponentTesting = function() {
+
+  for (var button in this.buttons) {
+    this.els[this.buttons[button]].removeEventListener('mousedown', this);
+    this.els[this.buttons[button]].removeEventListener('touchstart', this);
+  }
+
+  this.els.seekForward.removeEventListener('touchend', this);
+  this.els.seekBackward.removeEventListener('touchend', this);
+
+  this.buttons = null;
+
+  if (this.intervalId) {
+    clearInterval(this.intervalId);
+    this.intervalId = null;
+  }
+};
+
 MediaControlsImpl.prototype.triggerEvent = function(e) {
-  var event = document.createEvent("MouseEvents");
-  event.initMouseEvent('mousedown', false, false, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
-  console.log('dispatching ' + event.type + ' on ' + this.els[this.buttons[e.target]].id);
+
+  // mousedown and mousemove events on the slider-wrapper need a
+  // 'clientX' property indicating where on the slider the mouse
+  // was clicked.
+  var clientX = 0;
+  if ( e.target === 'slider-wrapper' &&
+      (e.type === 'mousedown' || e.type === 'mousemove') ) {
+    clientX = e.detail.clientX;
+  }
+
+  var event = new MouseEvent(e.type, {clientX: clientX});
+
+  // touchstart and touchmove events on the slider-wrapper neeed a
+  // 'changedTouches' object containing a 'clientX' property
+  // indicating where on the slider the *touch* occurred.
+  if ( e.target === 'slider-wrapper' &&
+      (e.type === 'touchstart' || e.type === 'touchmove') ) {
+    event.changedTouches = [{ clientX: e.detail.clientX }];
+  }
+
+  console.log('dispatching ' + event.type + ' on ' + this.els[this.buttons[e.target]]);
   this.els[this.buttons[e.target]].dispatchEvent(event);
 };
 
@@ -860,6 +930,18 @@ var MediaControls = Component.register('gaia-media-controls', {
     if (this.mediaPlayerImpl) {
       this.mediaPlayerImpl.unload();
       this.mediaPlayerImpl = null;
+    }
+  },
+
+  enableComponentTesting() {
+    if (this.mediaControlsImpl) {
+      this.mediaControlsImpl.enableComponentTesting();
+    }
+  },
+
+  disableComponentTesting() {
+    if (this.mediaControlsImpl) {
+      this.mediaControlsImpl.disableComponentTesting();
     }
   },
 
@@ -1005,7 +1087,7 @@ var MediaControls = Component.register('gaia-media-controls', {
   .play-head:after {
     content: "";
     position: absolute;
-    top: 0; 
+    top: 0;
     left: calc(50% - 1.15rem);
     width: 2.3rem;
     height: 2.3rem;
