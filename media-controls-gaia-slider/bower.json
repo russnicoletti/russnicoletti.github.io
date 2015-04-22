@@ -1,0 +1,30 @@
+{
+  "name": "gaia-media-controls",
+  "version": "0.0.1",
+  "homepage": "https://github.com/gaia-components/gaia-media-controls",
+  "authors": [
+    "Russ Nicoletti"
+  ],
+  "main": "gaia-media-controls.js",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "!.jshintrc",
+    "node_modules",
+    "bower_components",
+    "test",
+    "index.html",
+    "package.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "gaia-icons": "gaia-components/gaia-icons#~0.7.12",
+    "gaia-component": "gaia-components/gaia-component#~0.3.4",
+    "gaia-slider": "gaia-components/gaia-slider",
+    "gaia-theme": "gaia-components/gaia-theme#~0.4.6",
+    "gaia-fonts": "gaia-components/gaia-fonts#~0.2.1"
+  },
+  "resolutions": {
+    "gaia-component": "~0.3.4"
+  }
+}
