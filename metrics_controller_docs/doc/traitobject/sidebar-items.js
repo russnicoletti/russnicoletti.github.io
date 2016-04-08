@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["data","Get the data pointer from this trait object.Highly unsafe, as there is no information about the type of the data."],["data_mut","Get the data pointer from this trait object, mutably.Highly unsafe, as there is no information about the type of the data."]]});
