@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["MetricsController","The metrics controller for the CD Metrics Library"]]});

@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["MacBuilder","A Builder for macro invocations.Note that there are no commas added between args, as otherwise that macro invocations that could be expressed would be limited. You will need to add all required symbols with `with_arg` or `with_argss`."]]});

@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["retry","Invokes a function a certain number of times or until a condition is satisfied with a fixed wait after each unsuccessful try."]],"struct":[["Retry","Builder object for a retryable operation."],["RetryError","An error indicating that a retry call failed."]]});
