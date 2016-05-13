@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `metrics_controller` crate.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, metrics_controller">
+    <meta name="description" content="API documentation for the Rust `foreign_metrics` mod in crate `metrics_controller`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, foreign_metrics">
 
-    <title>metrics_controller - Rust</title>
+    <title>metrics_controller::foreign_metrics - Rust</title>
 
-    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
-    <link rel="stylesheet" type="text/css" href="../main.css">
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
     
 
     
@@ -28,7 +28,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'></p><script>window.sidebarCurrent = {name: 'metrics_controller', ty: 'mod', relpath: '../'};</script>
+        <p class='location'><a href='../index.html'>metrics_controller</a></p><script>window.sidebarCurrent = {name: 'foreign_metrics', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -43,28 +43,39 @@
     </nav>
 
     <section id='main' class="content mod">
-<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>metrics_controller</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>metrics_controller</a>::<wbr><a class='mod' href=''>foreign_metrics</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/metrics_controller/src/lib.rs.html#3-30' title='goto source code'>[src]</a></span></h1>
-<h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
-<table><tr><td><code>pub use controller::<a class='struct' href='../metrics_controller/controller/struct.MetricsController.html' title='metrics_controller::controller::MetricsController'>MetricsController</a>;</code></td></tr><tr><td><code>pub use foreign_metrics::<a class='struct' href='../metrics_controller/foreign_metrics/struct.Foreign.html' title='metrics_controller::foreign_metrics::Foreign'>Foreign</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+               </span><a id='src-70' class='srclink' href='../../src/metrics_controller/src/foreign_metrics.rs.html#8-166' title='goto source code'>[src]</a></span></h1>
+<h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                        <tr class=' module-item'>
-                           <td><a class='mod' href='controller/index.html'
-                                  title='metrics_controller::controller'>controller</a></td>
+                           <td><a class='struct' href='struct.Foreign.html'
+                                  title='metrics_controller::foreign_metrics::Foreign'>Foreign</a></td>
                            <td class='docblock short'>
                                 
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.init_metrics.html'
+                                  title='metrics_controller::foreign_metrics::init_metrics'>init_metrics</a></td>
+                           <td class='docblock short'>
+                                <p>Initializes the Metrics Libary.  Caller passes information
+about their application and environment. This information will be associated
+with the metrics data recorded by the <code>record_event</code> function.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
-                           <td><a class='mod' href='foreign_metrics/index.html'
-                                  title='metrics_controller::foreign_metrics'>foreign_metrics</a></td>
+                           <td><a class='fn' href='fn.record_event.html'
+                                  title='metrics_controller::foreign_metrics::record_event'>record_event</a></td>
                            <td class='docblock short'>
-                                
+                                <p>Constructs a new event which is batched and sent to the Google Analytics
+server.</p>
                            </td>
-                       </tr></table></section>
+                       </tr></table><h2 id='impls' class='section-header'><a href="#impls">Implementations</a></h2>
+<table></table></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -116,13 +127,13 @@
     
 
     <script>
-        window.rootPath = "../";
+        window.rootPath = "../../";
         window.currentCrate = "metrics_controller";
         window.playgroundUrl = "";
     </script>
-    <script src="../jquery.js"></script>
-    <script src="../main.js"></script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
     
-    <script defer src="../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>
