@@ -47,12 +47,12 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-40' class='srclink' href='../../src/metrics_controller/src/controller.rs.html#47-51' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-39' class='srclink' href='../../src/metrics_controller/src/controller.rs.html#54-57' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct MetricsController {
     // some fields omitted
 }</pre><div class='docblock'><p>The metrics controller for the CD Metrics Library</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../metrics_controller/controller/struct.MetricsController.html' title='metrics_controller::controller::MetricsController'>MetricsController</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-43' class='srclink' href='../../src/metrics_controller/src/controller.rs.html#53-156' title='goto source code'>[src]</a></span></h3>
-<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(app_name: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, app_version: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, app_update_channel: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, app_build_id: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, app_platform: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, locale: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, device: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, arch: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, os: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, os_version: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../metrics_controller/controller/struct.MetricsController.html' title='metrics_controller::controller::MetricsController'>MetricsController</a></code></h4>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../metrics_controller/controller/struct.MetricsController.html' title='metrics_controller::controller::MetricsController'>MetricsController</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-42' class='srclink' href='../../src/metrics_controller/src/controller.rs.html#59-196' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(app_name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_version: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_update_channel: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_build_id: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_platform: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, locale: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, device: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, arch: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, os: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, os_version: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../../metrics_controller/controller/struct.MetricsController.html' title='metrics_controller::controller::MetricsController'>MetricsController</a></code></h4>
 <div class='docblock'><p>Constructs a new <code>MetricsController</code>. Caller passes information
 about their application and environment. This information will be associated
 with the metrics data recorded by the <code>record_event</code> function.</p>
@@ -91,7 +91,26 @@ server.</p>
 
 <p><em>event_label</em> -- Description of what the metric is. For example, &apos;memory&apos;</p>
 
-<p><em>event_value</em> -- Numeric value of the metric.</p>
+<p><em>event_value</em> -- Numeric value of the metric, which is an Integer</p>
+
+<p>Returns:</p>
+
+<p><em>true</em> - Success</p>
+
+<p><em>false</em> - Error, unable to record the event</p>
+</div><h4 id='method.record_floating_point_event' class='method'><code>fn <a href='#method.record_floating_point_event' class='fnname'>record_floating_point_event</a>(&amp;mut self, event_category: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_action: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_label: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Constructs a new event which is batched and sent to the Google Analytics
+server.</p>
+
+<p>Params:</p>
+
+<p><em>event_category</em> -- Category of the event. For example, &apos;eng&apos; or &apos;user&apos;</p>
+
+<p><em>event_action</em> -- Action that the user took or what happened to trigger. For example, &apos;open-app&apos;</p>
+
+<p><em>event_label</em> -- Description of what the metric is. For example, &apos;memory&apos;</p>
+
+<p><em>event_value</em> -- Numeric value of the metric, which is a floating point</p>
 
 <p>Returns:</p>
 
@@ -121,6 +140,8 @@ server.</p>
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 

@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["controller",""]]});
+initSidebarItems({"mod":[["controller",""],["foreign_metrics",""]]});

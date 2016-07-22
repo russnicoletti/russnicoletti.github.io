@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `record_event` fn in crate `metrics_controller`.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, record_event">
+    <meta name="description" content="API documentation for the Rust `record_floating_point_event` fn in crate `metrics_controller`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, record_floating_point_event">
 
-    <title>metrics_controller::foreign_metrics::record_event - Rust</title>
+    <title>metrics_controller::foreign_metrics::record_floating_point_event - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
@@ -28,7 +28,7 @@
 
     <nav class="sidebar">
         
-        <p class='location'><a href='../index.html'>metrics_controller</a>::<wbr><a href='index.html'>foreign_metrics</a></p><script>window.sidebarCurrent = {name: 'record_event', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='../index.html'>metrics_controller</a>::<wbr><a href='index.html'>foreign_metrics</a></p><script>window.sidebarCurrent = {name: 'record_floating_point_event', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
     <nav class="sub">
@@ -43,12 +43,12 @@
     </nav>
 
     <section id='main' class="content fn">
-<h1 class='fqn'><span class='in-band'>Function <a href='../index.html'>metrics_controller</a>::<wbr><a href='index.html'>foreign_metrics</a>::<wbr><a class='fn' href=''>record_event</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Function <a href='../index.html'>metrics_controller</a>::<wbr><a href='index.html'>foreign_metrics</a>::<wbr><a class='fn' href=''>record_floating_point_event</a></span><span class='out-of-band'><span id='render-detail'>
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-129' class='srclink' href='../../src/metrics_controller/src/foreign_metrics.rs.html#100-113' title='goto source code'>[src]</a></span></h1>
-<pre class='rust fn'>pub extern fn record_event(event_category: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='type' href='https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html' title='std::os::raw::c_char'>c_char</a>, event_action: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='type' href='https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html' title='std::os::raw::c_char'>c_char</a>, event_label: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='type' href='https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html' title='std::os::raw::c_char'>c_char</a>, event_value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.i32.html'>i32</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></pre><div class='docblock'><p>Constructs a new event which is batched and sent to the Google Analytics
+               </span><a id='src-137' class='srclink' href='../../src/metrics_controller/src/foreign_metrics.rs.html#133-146' title='goto source code'>[src]</a></span></h1>
+<pre class='rust fn'>pub extern fn record_floating_point_event(event_category: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='type' href='https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html' title='std::os::raw::c_char'>c_char</a>, event_action: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='type' href='https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html' title='std::os::raw::c_char'>c_char</a>, event_label: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*const </a><a class='type' href='https://doc.rust-lang.org/nightly/std/os/raw/type.c_char.html' title='std::os::raw::c_char'>c_char</a>, event_value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></pre><div class='docblock'><p>Constructs a new event which is batched and sent to the Google Analytics
 server.</p>
 
 <p>Params:</p>
@@ -59,7 +59,7 @@ server.</p>
 
 <p><em>event_label</em> -- Description of what the metric is. For example, &apos;memory&apos;</p>
 
-<p><em>event_value</em> -- Numeric value of the metric.</p>
+<p><em>event_value</em> -- Numeric value of the metric, which is a floating point.</p>
 
 <p>Returns:</p>
 
