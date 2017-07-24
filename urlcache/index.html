@@ -4,8 +4,30 @@
 <head>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <script defer src="behavior.js"></script>
+    <title>Url Cache Demo</title>
 </head>
 <body>
+    <p class="introduction-text">
+        <span>Enter urls in the</span>
+        <span style="font-family:monospace;font-size:1.2em">url</span><span style="font-size:.1em"></span>
+        <span style="font-family:monospace;font-size:1.2em">input</span>
+        <span>box. As the url is being entered, the matching url
+from the cache will appear in the</span>
+        <span style="font-family:monospace;font-size:1.2em">cache</span><span style="font-size:.1em"></span>
+        <span style="font-family:monospace;font-size:1.2em">output</span>
+        <span>box.</span>
+    </p>
+    <p>
+        <span>To add a url to the cache, use the</span>
+        <span style="font-family:monospace;font-size:1.2em">add</span><span style="font-size:.1em"></span>
+        <span style="font-family:monospace;font-size:1.2em">to</span><span style="font-size:.1em"></span>
+        <span style="font-family: monospace;font-size:1.2em">cache</span>
+        <span>button. Or, load newline-separated urls from a file into the cache using the</span>
+        <span style="font-family:monospace;font-size:1.2em">file</span><span style="font-size:.1em"></span>
+        <span style="font-family:monospace;font-size:1.2em">containing</span><span style="font-size:.1em"></span>
+        <span style="font-family: monospace;font-size:1.2em">urls</span>
+        <span>button</span>
+    </p>
     <div class="wrapper">
         <div class="url-input-form">
             <form id="form" action="javascript:;" onreset="urlEnterResetHandler()">
@@ -16,7 +38,7 @@
         </div><!-- enter-url-form -->
         <div class="url-input-label label">url input</div>
         <div class="url-added-wrapper">
-            <span class="url-added-label label hidden" id="url-added-label">url added:&nbsp;</span>
+            <span class="url-added-label label hidden" id="url-added-label"></span>
             <span class="url-added hidden" id="url-added"></span>
         </div>
         <div class="cache-output-label label">cache output</div>
@@ -28,7 +50,7 @@
             </form>
         </div>
         <div class="urls-loaded-wrapper">
-            <span class="urls-loaded-label hidden" id="urls-loaded-label">urls loaded:&nbsp;</span>
+            <span class="urls-loaded-label label hidden" id="urls-loaded-label">urls loaded:</span>
             <span class="urls-loaded" id="urls-loaded"></span>
         </div>
     </div><!-- wrapper -->

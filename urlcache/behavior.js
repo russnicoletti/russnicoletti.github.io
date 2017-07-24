@@ -25,7 +25,7 @@ function UrlCache() {
 UrlCache.prototype = {
     constructor: UrlCache,
     addToCache: function(url) {
-        this.storeUrl(url);
+        return this.storeUrl(url);
     },
 
     initGetFromCache: function() {
@@ -142,12 +142,9 @@ function setVisible(name, visible) {
     let element = document.getElementById(name);
     if (visible) {
         element.classList.remove('hidden');
-        element.classList.add('visible');
     } else {
-        element.classList.remove('visible');
         element.classList.add('hidden');
     }
-    console.log('name: ' + element.classList);
 }
 
 function keyPressHandler(evt) {
@@ -161,28 +158,37 @@ function keyPressHandler(evt) {
         c = '';
     }
     let url = urlCache.getFromCache(c);
-    setVisible('url-added-label', false);
-    document.getElementById('url-added').innerHTML = '';
     document.getElementById('url-output').innerHTML = url;
+    setVisible('url-added-label', false);
+    setVisible('url-added', false);
 }
 
 function urlEnterResetHandler() {
     urlCache.initGetFromCache();
-    setVisible('url-added-label', false);
-    document.getElementById('url-added').innerHTML = '';
     document.getElementById('url-output').innerHTML = '';
+    setVisible('url-added-label', false);
+    setVisible('url-added', false);
 }
 
 function addHandler() {
     let url = document.getElementById('url-input').value;
-    urlCache.addToCache(url);
-    urlCache.initGetFromCache();
+    if (url.length == 0) {
+        return;
+    }
+    document.getElementById('url-added').innerHTML = url;
+    let urlAddedLabel = document.getElementById('url-added-label');
+    if (urlCache.addToCache(url)) {
+        urlAddedLabel.innerHTML = 'url added:';
+    } else {
+        urlAddedLabel.innerHTML = 'already in cache:';
+    }
 
     document.getElementById('url-input').value = '';
     document.getElementById('url-output').innerHTML = '';
     setVisible('url-added-label', true);
-    document.getElementById('url-added').innerHTML = url;
     setVisible('url-added', true);
+
+    urlCache.initGetFromCache();
 }
 
 function urlPopulateChangeHandler(evt) {
@@ -208,6 +214,6 @@ function urlPopulateChangeHandler(evt) {
         r.readAsText(f);
     }
     setVisible('url-added-label', false);
-    document.getElementById('url-added').innerHTML = '';
+    setVisible('url-added', false);
 }
 
