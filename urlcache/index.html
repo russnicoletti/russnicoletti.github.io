@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8"> 
+<head>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script defer src="behavior.js"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="url-input-form">
+            <form id="form" action="javascript:;" onreset="urlEnterResetHandler()">
+                <input type="text" id="url-input">
+                <input type="button" onclick="addHandler()" value="Add to cache">
+                <input type="reset" value="Clear url">
+            </form>
+        </div><!-- enter-url-form -->
+        <div class="url-input-label label">url input</div>
+        <div class="url-added-wrapper">
+            <span class="url-added-label label hidden" id="url-added-label">url added:&nbsp;</span>
+            <span class="url-added hidden" id="url-added"></span>
+        </div>
+        <div class="cache-output-label label">cache output</div>
+        <div class="cache-output" id="url-output"></div>
+        <div class="populate-urls-label label">file containing urls</div>
+        <div class="populate-urls-form">
+            <form action="javascript:;" id="populate-urls">
+                <input type="file" accept=".txt" id="url-file">
+            </form>
+        </div>
+        <div class="urls-loaded-wrapper">
+            <span class="urls-loaded-label hidden" id="urls-loaded-label">urls loaded:&nbsp;</span>
+            <span class="urls-loaded" id="urls-loaded"></span>
+        </div>
+    </div><!-- wrapper -->
+</body>
+</html>
+
