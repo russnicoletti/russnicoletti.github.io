@@ -92,7 +92,7 @@ worker thread needed to operate the metrics service.  The worker thread is respo
 
 <p><strong>true</strong> - Success</p>
 
-<p><strong>false</strong> - Error, unable to record the event</p>
+<p><strong>false</strong> - Unable to record the event</p>
 </div><h4 id='method.record_floating_point_event' class='method'><code>fn <a href='#method.record_floating_point_event' class='fnname'>record_floating_point_event</a>(&amp;mut self, event_category: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_action: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_label: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
 <div class='docblock'><p>Constructs and records an event with a floating point numeric value. The recorded events are sent to the server based on an internal schedule (when twenty events are recorded). Currently, this schedule is not configurable.</p>
 
@@ -110,7 +110,7 @@ worker thread needed to operate the metrics service.  The worker thread is respo
 
 <p><strong>true</strong> - Success</p>
 
-<p><strong>false</strong> - Error, unable to record the event</p>
+<p><strong>false</strong> - Unable to record the event</p>
 </div></div></section>
     <section id='search' class="content hidden"></section>
 
