@@ -53,7 +53,7 @@
 }</pre><div class='docblock'><p>The metrics controller for the CD Metrics Library</p>
 </div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../metrics_controller/controller/struct.MetricsController.html' title='metrics_controller::controller::MetricsController'>MetricsController</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-42' class='srclink' href='../../src/metrics_controller/src/controller.rs.html#59-196' title='goto source code'>[src]</a></span></h3>
 <div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(app_name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_version: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_update_channel: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_build_id: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, app_platform: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, locale: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, device: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, arch: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, os: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, os_version: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../../metrics_controller/controller/struct.MetricsController.html' title='metrics_controller::controller::MetricsController'>MetricsController</a></code></h4>
-<div class='docblock'><p>Constructs a new <code>MetricsController</code>. Caller passes information
+<div class='docblock'><p>Constructs a new <code>MetricsController</code> object. Caller passes information
 about their application and environment. This information will be associated
 with the metrics data recorded by the <code>record_event</code> function.</p>
 
@@ -72,26 +72,21 @@ with the metrics data recorded by the <code>record_event</code> function.</p>
     <span class='string'>&quot;linux&quot;</span>.<span class='ident'>to_string</span>(),
     <span class='string'>&quot;1.2.3&quot;</span>.<span class='ident'>to_string</span>());</pre>
 </div><h4 id='method.start_metrics' class='method'><code>fn <a href='#method.start_metrics' class='fnname'>start_metrics</a>(&amp;mut self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-<div class='docblock'><p>This function is called to start the metrics service.  It also starts the
-worker thread needed to operate the metrics service.  The worker thread
-is responsible for periodically: persisting the histogram data and
-transmitting it to the telemetry server.</p>
+<div class='docblock'><p>This function starts the metrics service, which also starts the
+worker thread needed to operate the metrics service.  The worker thread is responsible for periodically persisting the metrics data and transmitting it to the server.</p>
 </div><h4 id='method.stop_collecting' class='method'><code>fn <a href='#method.stop_collecting' class='fnname'>stop_collecting</a>(&amp;mut self)</code></h4>
-<div class='docblock'><p>Stops the metrics service and deletes metrics data that has been collected
-but not sent to the server.</p>
+<div class='docblock'><p>This function stops the metrics service and deletes metrics data that has been collected but not sent to the server.</p>
 </div><h4 id='method.record_event' class='method'><code>fn <a href='#method.record_event' class='fnname'>record_event</a>(&amp;mut self, event_category: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_action: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_label: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-<div class='docblock'><p>Constructs a new event which is batched and sent to the Google Analytics
-server.</p>
-
+<div class='docblock'><p>Constructs and records an event. The recorded events are sent to the server based on an internal schedule (when twenty events are recorded). Currently, this schedule is not configurable.</p>
 <p>Params:</p>
 
 <p><em>event_category</em> -- Category of the event. For example, &apos;eng&apos; or &apos;user&apos;</p>
 
-<p><em>event_action</em> -- Action that the user took or what happened to trigger. For example, &apos;open-app&apos;</p>
+<p><em>event_action</em> -- Action that triggered the event. For example, &apos;open-app&apos;</p>
 
-<p><em>event_label</em> -- Description of what the metric is. For example, &apos;memory&apos;</p>
+<p><em>event_label</em> -- Label, or description, of the metric. For example, &apos;memory&apos;</p>
 
-<p><em>event_value</em> -- Numeric value of the metric, which is an Integer</p>
+<p><em>event_value</em> -- Numeric value of the metric.</p>
 
 <p>Returns:</p>
 
@@ -99,18 +94,17 @@ server.</p>
 
 <p><em>false</em> - Error, unable to record the event</p>
 </div><h4 id='method.record_floating_point_event' class='method'><code>fn <a href='#method.record_floating_point_event' class='fnname'>record_floating_point_event</a>(&amp;mut self, event_category: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_action: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_label: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, event_value: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f64.html'>f64</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
-<div class='docblock'><p>Constructs a new event which is batched and sent to the Google Analytics
-server.</p>
+<div class='docblock'><p>Constructs and records an event. The recorded events are sent to the server based on an internal schedule (when twenty events are recorded). Currently, this schedule is not configurable.</p>
 
 <p>Params:</p>
 
 <p><em>event_category</em> -- Category of the event. For example, &apos;eng&apos; or &apos;user&apos;</p>
 
-<p><em>event_action</em> -- Action that the user took or what happened to trigger. For example, &apos;open-app&apos;</p>
+<p><em>event_action</em> -- Action that triggered the event. For example, &apos;open-app&apos;</p>
 
-<p><em>event_label</em> -- Description of what the metric is. For example, &apos;memory&apos;</p>
+<p><em>event_label</em> -- Label, or description, of the metric. For example, &apos;memory&apos;</p>
 
-<p><em>event_value</em> -- Numeric value of the metric, which is a floating point</p>
+<p><em>event_value</em> -- Numeric value of the metric.</p>
 
 <p>Returns:</p>
 
