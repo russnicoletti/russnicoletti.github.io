@@ -3,12 +3,12 @@ entries:
   altc-agent:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-03-31T14:49:34.670937-07:00"
+    created: "2023-03-31T15:27:06.006465-07:00"
     description: A Helm chart for an altc kubernetes agent
-    digest: 82329f39ec5842cb34f91d83ced87d2379bffa34cb13cfe378d978737f93c04e
+    digest: de5f0917e422e65e8bcc7f65a0ebc60570292de1d975669ca1f06f4cc7954937
     name: altc-agent
     type: application
     urls:
-    - https://russnicoletti.github.io/helm-chart/altc-agent-0.3.0.tgz
+    - https://russnicoletti.github.io/altc-helm/altc-agent-0.3.0.tgz
     version: 0.3.0
-generated: "2023-03-31T14:49:34.667688-07:00"
+generated: "2023-03-31T15:27:06.004918-07:00"
