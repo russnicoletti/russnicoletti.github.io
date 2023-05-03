@@ -3,7 +3,17 @@ entries:
   altc-agent:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-05-03T10:45:29.28383-07:00"
+    created: "2023-05-03T10:51:21.368543-07:00"
+    description: A Helm chart for an altc kubernetes agent
+    digest: b642ee9756e41110e6c771d737ca1638ad89c292d65138e1900f72b2f60acecb
+    name: altc-agent
+    type: application
+    urls:
+    - altc-agent-0.5.4.tgz
+    version: 0.5.4
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2023-05-03T10:51:21.367293-07:00"
     description: A Helm chart for an altc kubernetes agent
     digest: 2c1df43c4096e3cdbf147da1274f3961fde3625122224bd0f0e479884afa76d3
     name: altc-agent
@@ -13,7 +23,7 @@ entries:
     version: 0.5.3
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-05-03T10:45:29.283387-07:00"
+    created: "2023-05-03T10:51:21.366987-07:00"
     description: A Helm chart for an altc kubernetes agent
     digest: ca0a1f33bb55d08a80236c524e7c3e69189d171d1c6fcde75c736f273ba6a4bd
     name: altc-agent
@@ -23,7 +33,7 @@ entries:
     version: 0.5.2
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-05-03T10:45:29.283076-07:00"
+    created: "2023-05-03T10:51:21.366668-07:00"
     description: A Helm chart for an altc kubernetes agent
     digest: 2f77c41267c01ecd4baf2eac24098a0ba990f154ced44f350b05f67698f95721
     name: altc-agent
@@ -33,7 +43,7 @@ entries:
     version: 0.5.1
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-05-03T10:45:29.281011-07:00"
+    created: "2023-05-03T10:51:21.366396-07:00"
     description: A Helm chart for an altc kubernetes agent
     digest: d134620635fa002f201ba1ac73503b52b3b6a604007a8268e6cbe6e42a97dbcc
     name: altc-agent
@@ -43,7 +53,7 @@ entries:
     version: 0.5.0
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2023-05-03T10:45:29.28068-07:00"
+    created: "2023-05-03T10:51:21.366114-07:00"
     description: A Helm chart for an altc kubernetes agent
     digest: 82329f39ec5842cb34f91d83ced87d2379bffa34cb13cfe378d978737f93c04e
     name: altc-agent
@@ -51,4 +61,4 @@ entries:
     urls:
     - altc-agent-0.3.0.tgz
     version: 0.3.0
-generated: "2023-05-03T10:45:29.280236-07:00"
+generated: "2023-05-03T10:51:21.36569-07:00"
